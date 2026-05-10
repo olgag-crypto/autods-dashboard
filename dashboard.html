@@ -89,6 +89,18 @@ tbody td { padding:10px 12px; white-space:nowrap; }
 .p-autods   { background:#052e16; color:#6ee7b7; }
 .p-bys      { background:#2e1065; color:#c4b5fd; }
 
+.filters { display:flex; flex-wrap:wrap; gap:14px; align-items:center; background:var(--s1); border:1px solid var(--border); border-radius:14px; padding:14px 18px; margin-bottom:24px; position:relative; z-index:1; animation:fadeUp .5s both; }
+.filter-group { display:flex; align-items:center; gap:8px; }
+.filter-group label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600; }
+.filter-input { background:var(--s2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:7px 10px; font-size:12px; font-family:var(--fb); cursor:pointer; transition:.15s; color-scheme:dark; }
+.filter-input:hover, .filter-input:focus { border-color:var(--blue); outline:none; }
+.preset-group { display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
+.preset-btn { background:var(--s2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:6px 11px; font-size:11px; cursor:pointer; transition:.15s; font-family:var(--fb); }
+.preset-btn:hover { border-color:var(--blue); color:var(--blue); }
+.preset-btn.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+.filter-divider { width:1px; height:22px; background:var(--border); }
+.filter-count { font-size:11px; color:var(--muted); padding:0 4px; }
+
 #loader { position:fixed; inset:0; background:var(--bg); z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; transition:opacity .4s; }
 #loader.out { opacity:0; pointer-events:none; }
 .ring { width:48px; height:48px; border-radius:50%; border:3px solid var(--s3); border-top-color:var(--blue); animation:spin .8s linear infinite; }
@@ -125,6 +137,34 @@ tbody td { padding:10px 12px; white-space:nowrap; }
       <button class="refresh-btn" onclick="fetchData()">↻ Refresh</button>
     </div>
   </header>
+
+  <div class="filters" id="filters">
+    <div class="filter-group">
+      <label>From</label>
+      <input type="date" class="filter-input" id="fFrom"/>
+    </div>
+    <div class="filter-group">
+      <label>To</label>
+      <input type="date" class="filter-input" id="fTo"/>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <label>Brand</label>
+      <select class="filter-input" id="fBrand">
+        <option value="">All</option>
+        <option value="Brand">Brand</option>
+        <option value="Non-Brand">Non-Brand</option>
+      </select>
+    </div>
+    <div class="filter-count" id="fCount"></div>
+    <div class="preset-group">
+      <button type="button" class="preset-btn" data-range="today">Today</button>
+      <button type="button" class="preset-btn" data-range="7">Last 7d</button>
+      <button type="button" class="preset-btn" data-range="30">Last 30d</button>
+      <button type="button" class="preset-btn" data-range="all">All</button>
+      <button type="button" class="preset-btn" id="fReset">Reset</button>
+    </div>
+  </div>
 
   <div id="errBox"></div>
 
@@ -179,7 +219,7 @@ tbody td { padding:10px 12px; white-space:nowrap; }
 // ── CONFIG — Apps Script Web App URL ─────────────────────────────────────
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztxEcKnmwf2l0D0K-yarmh5wJ-w6UE8Ec0gPwo0n2XWmaIe9c3r_6BG8Mdmg_XAKVfog/exec';
 
-let _c=[], _i=[], _ch={}, _sc=2, _sa=false;
+let _cAll=[], _iAll=[], _c=[], _i=[], _ch={}, _sc=2, _sa=false, _fInit=false;
 
 // Auto-fetch on page load
 window.addEventListener('DOMContentLoaded', fetchData);
@@ -190,9 +230,10 @@ async function fetchData() {
     const res = await fetch(SCRIPT_URL);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const j = await res.json();
-    _c = j.campaigns || [];
-    _i = j.impact    || [];
-    render();
+    _cAll = j.campaigns || [];
+    _iAll = j.impact    || [];
+    initFilters();
+    applyFilters();
     hideLoader();
   } catch(e) {
     hideLoader();
@@ -201,6 +242,67 @@ async function fetchData() {
 }
 
 function render() { meta(); kpis(); brandDonut(); productDonut(); topBar(); impactBar(); table(); }
+
+function dataDates(){ return [...new Set(_cAll.map(r=>r.date).filter(Boolean))].sort(); }
+
+function initFilters() {
+  if (_fInit) return;
+  _fInit = true;
+  const dates = dataDates();
+  const fFrom = document.getElementById('fFrom');
+  const fTo   = document.getElementById('fTo');
+  if (dates.length) {
+    fFrom.value = fFrom.min = dates[0];
+    fTo.value   = fTo.max   = dates[dates.length-1];
+    fFrom.max = fTo.max;
+    fTo.min   = fFrom.min;
+  }
+  ['fFrom','fTo','fBrand'].forEach(id=>{
+    document.getElementById(id).addEventListener('change',()=>{ clearActivePreset(); applyFilters(); });
+  });
+  document.querySelectorAll('.preset-btn[data-range]').forEach(btn=>{
+    btn.addEventListener('click',()=>setPreset(btn));
+  });
+  document.getElementById('fReset').addEventListener('click',()=>{
+    const d = dataDates();
+    if (d.length) { fFrom.value = d[0]; fTo.value = d[d.length-1]; }
+    document.getElementById('fBrand').value = '';
+    clearActivePreset();
+    applyFilters();
+  });
+}
+
+function clearActivePreset(){ document.querySelectorAll('.preset-btn[data-range]').forEach(b=>b.classList.remove('active')); }
+
+function setPreset(btn) {
+  clearActivePreset();
+  btn.classList.add('active');
+  const range = btn.dataset.range;
+  const dates = dataDates();
+  if (!dates.length) return;
+  const last = dates[dates.length-1];
+  let from = dates[0];
+  if (range==='today') from = last;
+  else if (range==='7' || range==='30') {
+    const d = new Date(last); d.setDate(d.getDate() - (parseInt(range)-1));
+    const iso = d.toISOString().slice(0,10);
+    from = iso < dates[0] ? dates[0] : iso;
+  }
+  document.getElementById('fFrom').value = from;
+  document.getElementById('fTo').value   = last;
+  applyFilters();
+}
+
+function applyFilters() {
+  const from  = document.getElementById('fFrom').value;
+  const to    = document.getElementById('fTo').value;
+  const brand = document.getElementById('fBrand').value;
+  const inDate = d => (!from || d >= from) && (!to || d <= to);
+  _c = _cAll.filter(r => inDate(r.date) && (!brand || r.brandType === brand));
+  _i = _iAll.filter(r => (!r.date || inDate(r.date)) && (!brand || !r.brandType || r.brandType === brand));
+  document.getElementById('fCount').textContent = _c.length + ' of ' + _cAll.length + ' campaigns';
+  render();
+}
 
 function meta() {
   const dates = [...new Set(_c.map(r=>r.date))].sort();
