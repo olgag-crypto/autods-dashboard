@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AutoDS · Google Ads Daily Spend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:       #080d16;
+  --s1:       #0e1520;
+  --s2:       #131e2e;
+  --s3:       #182436;
+  --border:   rgba(255,255,255,.07);
+  --blue:     #3b82f6;
+  --cyan:     #22d3ee;
+  --violet:   #a78bfa;
+  --green:    #34d399;
+  --amber:    #fbbf24;
+  --red:      #f87171;
+  --text:     #e2e8f0;
+  --muted:    #4e6580;
+  --fh:       'Syne', sans-serif;
+  --fb:       'DM Sans', sans-serif;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--fb); font-size:14px; }
+
+.blob { position:fixed; border-radius:50%; filter:blur(120px); opacity:.12; pointer-events:none; z-index:0; }
+.blob-1 { width:600px; height:600px; background:var(--blue);   top:-200px; left:-200px; }
+.blob-2 { width:500px; height:500px; background:var(--violet); bottom:-150px; right:-150px; }
+
+.shell { position:relative; z-index:1; max-width:1440px; margin:0 auto; padding:32px 28px 60px; }
+
+header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:36px; flex-wrap:wrap; gap:16px; }
+.logo { display:flex; align-items:center; gap:12px; }
+.logo-mark { width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,var(--blue),var(--cyan)); display:flex; align-items:center; justify-content:center; font-family:var(--fh); font-weight:800; font-size:16px; color:#fff; }
+.logo-text h1 { font-family:var(--fh); font-size:1.4rem; font-weight:800; letter-spacing:-.3px; }
+.logo-text p  { font-size:11px; color:var(--muted); margin-top:1px; }
+
+.header-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.date-badge { background:var(--s2); border:1px solid var(--border); border-radius:8px; padding:5px 12px; font-size:12px; color:var(--muted); }
+#statusDot { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); }
+#statusDot::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.refresh-btn { background:var(--s2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px 14px; font-size:12px; cursor:pointer; transition:.15s; font-family:var(--fb); }
+.refresh-btn:hover { border-color:var(--blue); color:var(--blue); }
+
+.kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:24px; }
+@media(max-width:900px){ .kpis{ grid-template-columns:repeat(3,1fr); } }
+@media(max-width:500px){ .kpis{ grid-template-columns:repeat(2,1fr); } }
+
+.kpi { background:var(--s1); border:1px solid var(--border); border-radius:16px; padding:20px 18px; position:relative; overflow:hidden; animation:fadeUp .5s both; transition:.2s; }
+.kpi::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--kc,var(--blue)),transparent); }
+.kpi:hover { border-color:var(--kc,var(--blue)); transform:translateY(-2px); }
+.kpi .icon  { font-size:18px; margin-bottom:10px; }
+.kpi .label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+.kpi .val   { font-family:var(--fh); font-size:1.7rem; font-weight:700; margin:4px 0 2px; line-height:1; }
+.kpi .sub   { font-size:10px; color:var(--muted); }
+
+.grid {
+  display:grid; gap:18px;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  grid-template-areas:"d1 d1 d2 d2" "bar bar bar bar" "imp imp imp imp" "tbl tbl tbl tbl";
+}
+@media(max-width:800px){ .grid{ grid-template-columns:1fr; grid-template-areas:"d1""d2""bar""imp""tbl"; } }
+
+.card { background:var(--s1); border:1px solid var(--border); border-radius:18px; padding:22px 24px; animation:fadeUp .6s both; }
+.card-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; }
+.card-header h2   { font-family:var(--fh); font-size:.95rem; font-weight:700; }
+.card-header span { font-size:11px; color:var(--muted); }
+.chart-wrap { position:relative; }
+
+.tbl-scroll { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+thead th { text-align:left; padding:9px 12px; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.07em; border-bottom:1px solid var(--border); cursor:pointer; white-space:nowrap; user-select:none; transition:.15s; }
+thead th:hover { color:var(--blue); }
+thead th.asc::after  { content:' ▲'; font-size:9px; }
+thead th.desc::after { content:' ▼'; font-size:9px; }
+tbody tr { border-bottom:1px solid var(--border); transition:.1s; }
+tbody tr:hover { background:var(--s2); }
+tbody td { padding:10px 12px; white-space:nowrap; }
+.pill { display:inline-block; border-radius:5px; padding:2px 8px; font-size:10px; font-weight:600; letter-spacing:.03em; }
+.p-brand    { background:#172554; color:#93c5fd; }
+.p-nonbrand { background:#0c2233; color:#67e8f9; }
+.p-autods   { background:#052e16; color:#6ee7b7; }
+.p-bys      { background:#2e1065; color:#c4b5fd; }
+
+#loader { position:fixed; inset:0; background:var(--bg); z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; transition:opacity .4s; }
+#loader.out { opacity:0; pointer-events:none; }
+.ring { width:48px; height:48px; border-radius:50%; border:3px solid var(--s3); border-top-color:var(--blue); animation:spin .8s linear infinite; }
+@keyframes spin { to{ transform:rotate(360deg); } }
+.load-label { font-size:13px; color:var(--muted); }
+
+#errBox { display:none; background:#1a0a0a; border:1px solid #7f1d1d; color:#fca5a5; border-radius:12px; padding:14px 18px; font-size:13px; margin-bottom:20px; position:relative; z-index:1; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div id="loader">
+  <div class="ring"></div>
+  <div class="load-label">Fetching campaign data…</div>
+</div>
+
+<div class="shell">
+  <header>
+    <div class="logo">
+      <div class="logo-mark">A</div>
+      <div class="logo-text">
+        <h1>Google Ads · Daily Spend</h1>
+        <p>AutoDS Campaign Intelligence Dashboard</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="date-badge" id="dateRange">Loading…</div>
+      <div id="statusDot">Live data</div>
+      <button class="refresh-btn" onclick="fetchData()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <div id="errBox"></div>
+
+  <div class="kpis">
+    <div class="kpi" style="--kc:var(--blue);animation-delay:.05s"><div class="icon">💰</div><div class="label">Total Spend</div><div class="val" id="k1">–</div><div class="sub">USD · all campaigns</div></div>
+    <div class="kpi" style="--kc:var(--green);animation-delay:.1s"><div class="icon">👤</div><div class="label">Users Created</div><div class="val" id="k2">–</div><div class="sub">new sign-ups</div></div>
+    <div class="kpi" style="--kc:var(--amber);animation-delay:.15s"><div class="icon">🎯</div><div class="label">First Trials</div><div class="val" id="k3">–</div><div class="sub">conversions</div></div>
+    <div class="kpi" style="--kc:var(--cyan);animation-delay:.2s"><div class="icon">🏪</div><div class="label">Store Setups</div><div class="val" id="k4">–</div><div class="sub">onboarding</div></div>
+    <div class="kpi" style="--kc:var(--violet);animation-delay:.25s"><div class="icon">⚡</div><div class="label">Cost / Trial</div><div class="val" id="k5">–</div><div class="sub">efficiency</div></div>
+    <div class="kpi" style="--kc:var(--red);animation-delay:.3s"><div class="icon">📢</div><div class="label">Campaigns</div><div class="val" id="k6">–</div><div class="sub">active today</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card" style="grid-area:d1;animation-delay:.2s">
+      <div class="card-header"><h2>Brand Split</h2><span>spend by type</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="cBrand"></canvas></div>
+    </div>
+    <div class="card" style="grid-area:d2;animation-delay:.25s">
+      <div class="card-header"><h2>Product Split</h2><span>AutoDS vs BYS</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="cProduct"></canvas></div>
+    </div>
+    <div class="card" style="grid-area:bar;animation-delay:.3s">
+      <div class="card-header"><h2>Top Campaigns</h2><span>by spend (USD) · top 15</span></div>
+      <div class="chart-wrap" style="height:320px"><canvas id="cTop"></canvas></div>
+    </div>
+    <div class="card" style="grid-area:imp;animation-delay:.35s">
+      <div class="card-header"><h2>Impact Mapping</h2><span>spend vs free trial impact by category</span></div>
+      <div class="chart-wrap" style="height:280px"><canvas id="cImpact"></canvas></div>
+    </div>
+    <div class="card" style="grid-area:tbl;animation-delay:.4s">
+      <div class="card-header"><h2>Campaign Detail</h2><span>click headers to sort</span></div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th onclick="srt(0)">Date</th>
+            <th onclick="srt(1)">Campaign</th>
+            <th onclick="srt(2)">Cost $</th>
+            <th onclick="srt(3)">Type</th>
+            <th onclick="srt(4)">Product</th>
+            <th onclick="srt(5)">Users</th>
+            <th onclick="srt(6)">Trials</th>
+            <th onclick="srt(7)">Stores</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG — Apps Script Web App URL ─────────────────────────────────────
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztxEcKnmwf2l0D0K-yarmh5wJ-w6UE8Ec0gPwo0n2XWmaIe9c3r_6BG8Mdmg_XAKVfog/exec';
+
+let _c=[], _i=[], _ch={}, _sc=2, _sa=false;
+
+// Auto-fetch on page load
+window.addEventListener('DOMContentLoaded', fetchData);
+
+async function fetchData() {
+  showLoader(); hideErr();
+  try {
+    const res = await fetch(SCRIPT_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    _c = j.campaigns || [];
+    _i = j.impact    || [];
+    render();
+    hideLoader();
+  } catch(e) {
+    hideLoader();
+    showErr('Could not load data: ' + e.message);
+  }
+}
+
+function render() { meta(); kpis(); brandDonut(); productDonut(); topBar(); impactBar(); table(); }
+
+function meta() {
+  const dates = [...new Set(_c.map(r=>r.date))].sort();
+  document.getElementById('dateRange').textContent =
+    dates.length ? (dates.length===1 ? dates[0] : dates[0]+' → '+dates[dates.length-1]) : '–';
+}
+
+function kpis() {
+  const sp=sum(_c,'cost'), us=sum(_c,'userCreated'), tr=sum(_c,'firstTrial'), st=sum(_c,'storeSetup');
+  set('k1','$'+fmt(sp)); set('k2',fmtN(us)); set('k3',fmtN(tr));
+  set('k4',fmtN(st)); set('k5','$'+fmt(tr?sp/tr:0)); set('k6',_c.length);
+}
+
+const PAL=['#3b82f6','#22d3ee','#a78bfa','#34d399','#fbbf24','#f87171','#ec4899','#f97316','#84cc16','#14b8a6','#8b5cf6','#0ea5e9','#d946ef'];
+
+function donut(id,labels,data,colors){
+  if(_ch[id])_ch[id].destroy();
+  _ch[id]=new Chart(document.getElementById(id),{type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderColor:'#0e1520',borderWidth:3}]},
+    options:{cutout:'68%',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{callbacks:{label:ctx=>' $'+fmt(ctx.parsed)+' ('+pct(ctx.parsed,ctx.dataset.data)+'%)'}}}}});
+}
+
+function brandDonut(){const g=gsum(_c,'brandType');donut('cBrand',Object.keys(g),Object.values(g),['#3b82f6','#22d3ee','#a78bfa']);}
+function productDonut(){const g=gsum(_c,'product');donut('cProduct',Object.keys(g),Object.values(g),['#34d399','#a78bfa','#fbbf24']);}
+
+function topBar(){
+  const top=[..._c].sort((a,b)=>b.cost-a.cost).slice(0,15);
+  if(_ch.cTop)_ch.cTop.destroy();
+  _ch.cTop=new Chart(document.getElementById('cTop'),{type:'bar',
+    data:{labels:top.map(c=>trim(c.campaign,32)),datasets:[{label:'Spend (USD)',data:top.map(c=>c.cost),
+      backgroundColor:top.map((_,i)=>PAL[i%PAL.length]+'cc'),borderRadius:5,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+fmt(ctx.parsed.x)}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4e6580',font:{size:10}}},
+              y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#94a3b8',font:{size:10}}}}}});
+}
+
+function impactBar(){
+  if(!_i.length)return;
+  const g={};
+  _i.forEach(r=>{const k=r.impactMapping||'Unknown';if(!g[k])g[k]={cost:0,trials:0};g[k].cost+=r.cost;g[k].trials+=r.freeTrialImpact;});
+  const labels=Object.keys(g);
+  if(_ch.cImpact)_ch.cImpact.destroy();
+  _ch.cImpact=new Chart(document.getElementById('cImpact'),{type:'bar',
+    data:{labels,datasets:[
+      {label:'Cost (USD)',data:labels.map(k=>g[k].cost),backgroundColor:'#3b82f6aa',borderRadius:4,yAxisID:'y'},
+      {label:'Free Trial Impact',data:labels.map(k=>g[k].trials),backgroundColor:'#34d399aa',borderRadius:4,yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4e6580',font:{size:10},maxRotation:35}},
+        y:{position:'left',grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#3b82f6',font:{size:10}},title:{display:true,text:'Spend $',color:'#3b82f6',font:{size:11}}},
+        y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:'#34d399',font:{size:10}},title:{display:true,text:'Trials',color:'#34d399',font:{size:11}}}
+      }}});
+}
+
+function table(){renderRows();}
+function srt(col){_sc===col?(_sa=!_sa):(_sc=col,_sa=col!==2);document.querySelectorAll('thead th').forEach((th,i)=>{th.classList.remove('asc','desc');if(i===_sc)th.classList.add(_sa?'asc':'desc');});renderRows();}
+function renderRows(){
+  const fields=['date','campaign','cost','brandType','product','userCreated','firstTrial','storeSetup'];
+  const rows=[..._c].sort((a,b)=>{let av=a[fields[_sc]],bv=b[fields[_sc]];if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}return _sa?(av>bv?1:-1):(av<bv?1:-1);});
+  document.getElementById('tbody').innerHTML=rows.map(r=>`<tr>
+    <td>${r.date}</td><td title="${r.campaign}">${trim(r.campaign,42)}</td>
+    <td>$${fmt(r.cost)}</td>
+    <td><span class="pill ${r.brandType==='Brand'?'p-brand':'p-nonbrand'}">${r.brandType}</span></td>
+    <td><span class="pill ${r.product==='BYS'?'p-bys':'p-autods'}">${r.product}</span></td>
+    <td>${r.userCreated.toLocaleString()}</td><td>${r.firstTrial.toLocaleString()}</td><td>${r.storeSetup.toLocaleString()}</td>
+  </tr>`).join('');
+}
+
+const sum=(arr,k)=>arr.reduce((s,r)=>s+(r[k]||0),0);
+const fmt=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN=n=>n.toLocaleString('en-US');
+const pct=(v,arr)=>{const s=arr.reduce((a,b)=>a+b,0);return s?(v/s*100).toFixed(1):0;};
+const trim=(s,n)=>s&&s.length>n?s.slice(0,n)+'…':s;
+const set=(id,v)=>document.getElementById(id).textContent=v;
+const gsum=(arr,k)=>arr.reduce((acc,r)=>{const key=r[k]||'Unknown';acc[key]=(acc[key]||0)+r.cost;return acc;},{});
+function showLoader(){document.getElementById('loader').classList.remove('out');}
+function hideLoader(){document.getElementById('loader').classList.add('out');}
+function showErr(msg){const e=document.getElementById('errBox');e.textContent='⚠ '+msg;e.style.display='block';}
+function hideErr(){document.getElementById('errBox').style.display='none';}
+</script>
+</body>
+</html>
