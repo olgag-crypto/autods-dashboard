@@ -29,9 +29,13 @@ header{display:flex;align-items:flex-start;justify-content:space-between;margin-
 .date-badge{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--muted)}
 #statusDot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
 #statusDot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+#statusDot.stale::before{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+#statusDot.loading::before{background:var(--blue);box-shadow:0 0 6px var(--blue)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.cache-info{font-size:10px;color:var(--muted);text-align:right}
 .refresh-btn{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;transition:.15s;font-family:var(--fb)}
 .refresh-btn:hover{border-color:var(--blue);color:var(--blue)}
+.refresh-btn:disabled{opacity:.4;cursor:not-allowed}
 .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:24px}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:500px){.kpis{grid-template-columns:repeat(2,1fr)}}
@@ -77,7 +81,7 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
 .p-nonbrand{background:#0c2233;color:#67e8f9}
 .p-autods{background:#052e16;color:#6ee7b7}
 .p-bys{background:#2e1065;color:#c4b5fd}
-/* pivot toggle */
+/* toggle */
 .toggle-wrap{display:flex;align-items:center;gap:8px}
 .toggle-label{font-size:11px;color:var(--muted);white-space:nowrap}
 .toggle{position:relative;width:38px;height:20px;flex-shrink:0}
@@ -91,12 +95,19 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
 .search-wrap::before{content:'🔍';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;pointer-events:none}
 .search-input{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px 7px 28px;font-size:12px;font-family:var(--fb);transition:.15s;outline:none;width:180px}
 .search-input:focus{border-color:var(--blue)}
-/* loader */
-#loader{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
-#loader.out{opacity:0;pointer-events:none}
-.ring{width:48px;height:48px;border-radius:50%;border:3px solid var(--s3);border-top-color:var(--blue);animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.load-label{font-size:13px;color:var(--muted)}
+
+/* ── SKELETON ── */
+.skeleton{background:var(--s2);border-radius:6px;animation:shimmer 1.5s infinite}
+@keyframes shimmer{
+  0%{background:var(--s2)}
+  50%{background:var(--s3)}
+  100%{background:var(--s2)}
+}
+.sk-val{height:32px;width:80px;margin:8px 0 6px}
+.sk-sub{height:10px;width:60px}
+.sk-chart{width:100%;border-radius:10px;animation:shimmer 1.5s infinite}
+.sk-row{height:38px;width:100%;border-radius:4px;margin-bottom:6px;animation:shimmer 1.5s infinite;background:var(--s2)}
+
 #errBox{display:none;background:#1a0a0a;border:1px solid #7f1d1d;color:#fca5a5;border-radius:12px;padding:14px 18px;font-size:13px;margin-bottom:20px;position:relative;z-index:1}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 </style>
@@ -104,7 +115,6 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
 <body>
 <div class="blob blob-1"></div>
 <div class="blob blob-2"></div>
-<div id="loader"><div class="ring"></div><div class="load-label">Fetching campaign data…</div></div>
 
 <div class="shell">
   <header>
@@ -117,8 +127,9 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
     </div>
     <div class="header-right">
       <div class="date-badge" id="dateRange">Loading…</div>
-      <div id="statusDot">Live data</div>
-      <button class="refresh-btn" onclick="fetchData()">↻ Refresh</button>
+      <div id="statusDot" class="loading">Connecting…</div>
+      <div class="cache-info" id="cacheInfo"></div>
+      <button class="refresh-btn" id="refreshBtn" onclick="fetchFresh()">↻ Force Refresh</button>
     </div>
   </header>
 
@@ -158,34 +169,71 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
 
   <!-- KPIs -->
   <div class="kpis">
-    <div class="kpi" style="--kc:var(--blue);animation-delay:.05s"><div class="icon">💰</div><div class="label">Total Spend</div><div class="val" id="k1">–</div><div class="sub">USD · all campaigns</div></div>
-    <div class="kpi" style="--kc:var(--green);animation-delay:.1s"><div class="icon">👤</div><div class="label">Users Created</div><div class="val" id="k2">–</div><div class="sub">new sign-ups</div></div>
-    <div class="kpi" style="--kc:var(--amber);animation-delay:.15s"><div class="icon">🎯</div><div class="label">First Trials</div><div class="val" id="k3">–</div><div class="sub">conversions</div></div>
-    <div class="kpi" style="--kc:var(--cyan);animation-delay:.2s"><div class="icon">🏪</div><div class="label">Store Setups</div><div class="val" id="k4">–</div><div class="sub">onboarding</div></div>
-    <div class="kpi" style="--kc:var(--violet);animation-delay:.25s"><div class="icon">⚡</div><div class="label">Cost / Trial</div><div class="val" id="k5">–</div><div class="sub">efficiency</div></div>
-    <div class="kpi" style="--kc:var(--red);animation-delay:.3s"><div class="icon">📢</div><div class="label">Campaigns</div><div class="val" id="k6">–</div><div class="sub">active today</div></div>
+    <div class="kpi" style="--kc:var(--blue);animation-delay:.05s">
+      <div class="icon">💰</div><div class="label">Total Spend</div>
+      <div class="val" id="k1"><div class="skeleton sk-val"></div></div>
+      <div class="sub" id="k1s"><div class="skeleton sk-sub"></div></div>
+    </div>
+    <div class="kpi" style="--kc:var(--green);animation-delay:.1s">
+      <div class="icon">👤</div><div class="label">Users Created</div>
+      <div class="val" id="k2"><div class="skeleton sk-val"></div></div>
+      <div class="sub" id="k2s"><div class="skeleton sk-sub"></div></div>
+    </div>
+    <div class="kpi" style="--kc:var(--amber);animation-delay:.15s">
+      <div class="icon">🎯</div><div class="label">First Trials</div>
+      <div class="val" id="k3"><div class="skeleton sk-val"></div></div>
+      <div class="sub" id="k3s"><div class="skeleton sk-sub"></div></div>
+    </div>
+    <div class="kpi" style="--kc:var(--cyan);animation-delay:.2s">
+      <div class="icon">🏪</div><div class="label">Store Setups</div>
+      <div class="val" id="k4"><div class="skeleton sk-val"></div></div>
+      <div class="sub" id="k4s"><div class="skeleton sk-sub"></div></div>
+    </div>
+    <div class="kpi" style="--kc:var(--violet);animation-delay:.25s">
+      <div class="icon">⚡</div><div class="label">Cost / Trial</div>
+      <div class="val" id="k5"><div class="skeleton sk-val"></div></div>
+      <div class="sub" id="k5s"><div class="skeleton sk-sub"></div></div>
+    </div>
+    <div class="kpi" style="--kc:var(--red);animation-delay:.3s">
+      <div class="icon">📢</div><div class="label">Campaigns</div>
+      <div class="val" id="k6"><div class="skeleton sk-val"></div></div>
+      <div class="sub" id="k6s"><div class="skeleton sk-sub"></div></div>
+    </div>
   </div>
 
   <!-- CHARTS -->
   <div class="grid">
     <div class="card" style="grid-area:d1;animation-delay:.2s">
       <div class="card-header"><h2>Brand Split</h2><span>spend by type</span></div>
-      <div class="chart-wrap" style="height:220px"><canvas id="cBrand"></canvas></div>
+      <div class="chart-wrap" style="height:220px" id="sk-brand">
+        <div class="skeleton sk-chart" style="height:220px"></div>
+      </div>
+      <canvas id="cBrand" style="display:none;max-height:220px"></canvas>
     </div>
     <div class="card" style="grid-area:d2;animation-delay:.25s">
       <div class="card-header"><h2>Product Split</h2><span>AutoDS vs BYS</span></div>
-      <div class="chart-wrap" style="height:220px"><canvas id="cProduct"></canvas></div>
+      <div class="chart-wrap" style="height:220px" id="sk-product">
+        <div class="skeleton sk-chart" style="height:220px"></div>
+      </div>
+      <canvas id="cProduct" style="display:none;max-height:220px"></canvas>
     </div>
     <div class="card" style="grid-area:bar;animation-delay:.3s">
       <div class="card-header"><h2>Top Campaigns</h2><span>by spend (USD) · top 15</span></div>
-      <div class="chart-wrap" style="height:320px"><canvas id="cTop"></canvas></div>
+      <div id="sk-top">
+        <div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>
+        <div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>
+      </div>
+      <canvas id="cTop" style="display:none;max-height:320px"></canvas>
     </div>
     <div class="card" style="grid-area:imp;animation-delay:.35s">
       <div class="card-header"><h2>Impact Mapping</h2><span>spend vs free trial impact by category</span></div>
-      <div class="chart-wrap" style="height:280px"><canvas id="cImpact"></canvas></div>
+      <div id="sk-impact">
+        <div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>
+      </div>
+      <canvas id="cImpact" style="display:none;max-height:280px"></canvas>
     </div>
 
-    <!-- CAMPAIGN TABLE -->
+    <!-- TABLE -->
     <div class="card" style="grid-area:tbl;animation-delay:.4s">
       <div class="card-header">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -205,7 +253,11 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
           </div>
         </div>
       </div>
-      <div class="tbl-scroll">
+      <div id="sk-table">
+        <div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>
+        <div class="sk-row"></div><div class="sk-row"></div>
+      </div>
+      <div class="tbl-scroll" id="tbl-real" style="display:none">
         <table>
           <thead id="thead"></thead>
           <tbody id="tbody"></tbody>
@@ -218,19 +270,115 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
 
 <script>
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbztxEcKnmwf2l0D0K-yarmh5wJ-w6UE8Ec0gPwo0n2XWmaIe9c3r_6BG8Mdmg_XAKVfog/exec';
+const CACHE_KEY='autods_dashboard_cache';
+const CACHE_TTL=24*60*60*1000; // 24 hours in ms
+
 let _cAll=[],_iAll=[],_c=[],_i=[],_ch={},_sc=2,_sa=false,_fInit=false;
 
-window.addEventListener('DOMContentLoaded',fetchData);
+window.addEventListener('DOMContentLoaded', init);
 
-async function fetchData(){
-  showLoader();hideErr();
-  try{
-    const res=await fetch(SCRIPT_URL);
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const j=await res.json();
-    _cAll=j.campaigns||[];_iAll=j.impact||[];
-    initFilters();applyFilters();hideLoader();
-  }catch(e){hideLoader();showErr('Could not load data: '+e.message);}
+async function init() {
+  // Try cache first — renders instantly
+  const cached = loadCache();
+  if (cached) {
+    _cAll = cached.campaigns;
+    _iAll = cached.impact;
+    initFilters();
+    applyFilters();
+    showCharts();
+    updateStatusDot('cached', cached.timestamp);
+
+    // If cache is stale (>24h), fetch fresh in background silently
+    if (Date.now() - cached.timestamp > CACHE_TTL) {
+      updateStatusDot('stale', cached.timestamp);
+      fetchFresh(true); // silent background refresh
+    }
+  } else {
+    // No cache — fetch fresh and show skeletons meanwhile
+    fetchFresh(false);
+  }
+}
+
+async function fetchFresh(silent=false) {
+  if (!silent) updateStatusDot('loading');
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = '↻ Refreshing…';
+  try {
+    const res = await fetch(SCRIPT_URL + '?t=' + Date.now()); // bust cache
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    const ts = Date.now();
+    saveCache({campaigns: j.campaigns||[], impact: j.impact||[], timestamp: ts});
+    _cAll = j.campaigns || [];
+    _iAll = j.impact    || [];
+    if (!_fInit) initFilters();
+    applyFilters();
+    showCharts();
+    updateStatusDot('live', ts);
+  } catch(e) {
+    if (!silent) showErr('Could not load data: ' + e.message + '. Showing cached data if available.');
+    updateStatusDot('live', null);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↻ Force Refresh';
+  }
+}
+
+// ── CACHE ────────────────────────────────────────────────────────────────
+function saveCache(data) {
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch(e) {}
+  // Also save to localStorage as longer-term cache
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function loadCache() {
+  // Try sessionStorage first (same tab), then localStorage
+  try {
+    const s = sessionStorage.getItem(CACHE_KEY);
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  try {
+    const l = localStorage.getItem(CACHE_KEY);
+    if (l) return JSON.parse(l);
+  } catch(e) {}
+  return null;
+}
+
+function updateStatusDot(state, ts) {
+  const dot  = document.getElementById('statusDot');
+  const info = document.getElementById('cacheInfo');
+  dot.className = state;
+  if (state === 'live')    { dot.textContent = 'Live data'; }
+  if (state === 'cached')  { dot.textContent = 'Cached data'; }
+  if (state === 'stale')   { dot.textContent = 'Refreshing…'; }
+  if (state === 'loading') { dot.textContent = 'Loading…'; }
+  if (ts) {
+    const d = new Date(ts);
+    info.textContent = 'Last fetched: ' + d.toLocaleTimeString() + ' · ' + d.toLocaleDateString();
+  } else {
+    info.textContent = '';
+  }
+}
+
+// ── SHOW CHARTS (hide skeletons) ─────────────────────────────────────────
+function showCharts() {
+  ['sk-brand','sk-product','sk-top','sk-impact','sk-table'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  ['cBrand','cProduct','cTop','cImpact'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='block';
+  });
+  const tbl=document.getElementById('tbl-real'); if(tbl) tbl.style.display='block';
+  // Clear skeleton KPI values
+  ['k1','k2','k3','k4','k5','k6'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && el.querySelector('.skeleton')) el.innerHTML='–';
+  });
+  ['k1s','k2s','k3s','k4s','k5s','k6s'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && el.querySelector('.skeleton')) el.innerHTML='';
+  });
 }
 
 function render(){meta();kpis();brandDonut();productDonut();topBar();impactBar();renderRows();}
@@ -282,6 +430,8 @@ function meta(){
 function kpis(){
   const sp=sum(_c,'cost'),us=sum(_c,'userCreated'),tr=sum(_c,'firstTrial'),st=sum(_c,'storeSetup');
   set('k1','$'+fmt(sp));set('k2',fmtN(us));set('k3',fmtN(tr));set('k4',fmtN(st));set('k5','$'+fmt(tr?sp/tr:0));set('k6',_c.length);
+  set('k1s','USD · all campaigns');set('k2s','new sign-ups');set('k3s','conversions');
+  set('k4s','onboarding');set('k5s','efficiency');set('k6s','active today');
 }
 
 const PAL=['#3b82f6','#22d3ee','#a78bfa','#34d399','#fbbf24','#f87171','#ec4899','#f97316','#84cc16','#14b8a6','#8b5cf6','#0ea5e9','#d946ef'];
@@ -330,34 +480,24 @@ function impactBar(){
 function renderRows(){
   const pivot=document.getElementById('pivotToggle').checked;
   const search=(document.getElementById('tblSearch').value||'').toLowerCase();
-
   if(pivot){
     document.getElementById('thead').innerHTML=`<tr>
       <th onclick="srt(0)">Campaign</th><th onclick="srt(1)">Type</th><th onclick="srt(2)">Product</th>
       <th onclick="srt(3)">Days</th><th onclick="srt(4)">Total Cost $</th>
       <th onclick="srt(5)">Users</th><th onclick="srt(6)">Trials</th><th onclick="srt(7)">Stores</th>
       <th onclick="srt(8)">Cost/Trial</th></tr>`;
-
     const groups={};
     _c.forEach(r=>{
       const k=r.campaign;
       if(!groups[k])groups[k]={campaign:k,brandType:r.brandType,product:r.product,days:new Set(),cost:0,userCreated:0,firstTrial:0,storeSetup:0};
       groups[k].days.add(r.date);groups[k].cost+=r.cost;groups[k].userCreated+=r.userCreated;groups[k].firstTrial+=r.firstTrial;groups[k].storeSetup+=r.storeSetup;
     });
-
     let rows=Object.values(groups).map(g=>({...g,days:g.days.size}));
     if(search)rows=rows.filter(r=>r.campaign.toLowerCase().includes(search));
-
     const pFields=['campaign','brandType','product','days','cost','userCreated','firstTrial','storeSetup'];
-    rows.sort((a,b)=>{
-      let av=pFields[_sc]?a[pFields[_sc]]:a.cost,bv=pFields[_sc]?b[pFields[_sc]]:b.cost;
-      if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}
-      return _sa?(av>bv?1:-1):(av<bv?1:-1);
-    });
-
+    rows.sort((a,b)=>{let av=pFields[_sc]?a[pFields[_sc]]:a.cost,bv=pFields[_sc]?b[pFields[_sc]]:b.cost;if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}return _sa?(av>bv?1:-1):(av<bv?1:-1);});
     const tC=rows.reduce((s,r)=>s+r.cost,0),tU=rows.reduce((s,r)=>s+r.userCreated,0),tT=rows.reduce((s,r)=>s+r.firstTrial,0),tS=rows.reduce((s,r)=>s+r.storeSetup,0);
     document.getElementById('tblCount').textContent=rows.length+' unique campaigns';
-
     document.getElementById('tbody').innerHTML=rows.map(r=>`<tr>
       <td title="${r.campaign}">${trim(r.campaign,44)}</td>
       <td><span class="pill ${r.brandType==='Brand'?'p-brand':'p-nonbrand'}">${r.brandType||'–'}</span></td>
@@ -367,27 +507,22 @@ function renderRows(){
       <td>${r.userCreated.toLocaleString()}</td><td>${r.firstTrial.toLocaleString()}</td><td>${r.storeSetup.toLocaleString()}</td>
       <td style="color:var(--amber)">$${fmt(r.firstTrial?r.cost/r.firstTrial:0)}</td>
     </tr>`).join('');
-
     document.getElementById('tfoot').innerHTML=`<tr>
       <td class="total-label">Totals</td><td></td><td></td><td></td>
       <td><strong>$${fmt(tC)}</strong></td><td><strong>${fmtN(tU)}</strong></td>
       <td><strong>${fmtN(tT)}</strong></td><td><strong>${fmtN(tS)}</strong></td>
       <td style="color:var(--amber)"><strong>$${fmt(tT?tC/tT:0)}</strong></td></tr>`;
-
   }else{
     document.getElementById('thead').innerHTML=`<tr>
       <th onclick="srt(0)">Date</th><th onclick="srt(1)">Campaign</th><th onclick="srt(2)">Cost $</th>
       <th onclick="srt(3)">Type</th><th onclick="srt(4)">Product</th>
       <th onclick="srt(5)">Users</th><th onclick="srt(6)">Trials</th><th onclick="srt(7)">Stores</th></tr>`;
-
     const fields=['date','campaign','cost','brandType','product','userCreated','firstTrial','storeSetup'];
     let rows=[..._c];
     if(search)rows=rows.filter(r=>r.campaign.toLowerCase().includes(search)||r.date.includes(search));
     rows.sort((a,b)=>{let av=a[fields[_sc]],bv=b[fields[_sc]];if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}return _sa?(av>bv?1:-1):(av<bv?1:-1);});
-
     const tC=rows.reduce((s,r)=>s+r.cost,0),tU=rows.reduce((s,r)=>s+r.userCreated,0),tT=rows.reduce((s,r)=>s+r.firstTrial,0),tS=rows.reduce((s,r)=>s+r.storeSetup,0);
     document.getElementById('tblCount').textContent=rows.length+' rows';
-
     document.getElementById('tbody').innerHTML=rows.map(r=>`<tr>
       <td>${r.date}</td><td title="${r.campaign}">${trim(r.campaign,42)}</td>
       <td>$${fmt(r.cost)}</td>
@@ -395,18 +530,15 @@ function renderRows(){
       <td><span class="pill ${r.product==='BYS'?'p-bys':'p-autods'}">${r.product}</span></td>
       <td>${r.userCreated.toLocaleString()}</td><td>${r.firstTrial.toLocaleString()}</td><td>${r.storeSetup.toLocaleString()}</td>
     </tr>`).join('');
-
     document.getElementById('tfoot').innerHTML=`<tr>
       <td class="total-label">Totals</td><td></td>
       <td><strong>$${fmt(tC)}</strong></td><td></td><td></td>
       <td><strong>${fmtN(tU)}</strong></td><td><strong>${fmtN(tT)}</strong></td><td><strong>${fmtN(tS)}</strong></td></tr>`;
   }
-
   document.querySelectorAll('thead th').forEach((th,i)=>{th.classList.remove('asc','desc');if(i===_sc)th.classList.add(_sa?'asc':'desc');});
 }
 
 function srt(col){_sc===col?(_sa=!_sa):(_sc=col,_sa=col!==2);renderRows();}
-
 const sum=(arr,k)=>arr.reduce((s,r)=>s+(r[k]||0),0);
 const fmt=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtN=n=>n.toLocaleString('en-US');
@@ -414,10 +546,7 @@ const pct=(v,arr)=>{const s=arr.reduce((a,b)=>a+b,0);return s?(v/s*100).toFixed(
 const trim=(s,n)=>s&&s.length>n?s.slice(0,n)+'…':s;
 const set=(id,v)=>document.getElementById(id).textContent=v;
 const gsum=(arr,k)=>arr.reduce((acc,r)=>{const key=r[k]||'Unknown';acc[key]=(acc[key]||0)+r.cost;return acc;},{});
-function showLoader(){document.getElementById('loader').classList.remove('out');}
-function hideLoader(){document.getElementById('loader').classList.add('out');}
 function showErr(msg){const e=document.getElementById('errBox');e.textContent='⚠ '+msg;e.style.display='block';}
-function hideErr(){document.getElementById('errBox').style.display='none';}
 </script>
 </body>
 </html>
