@@ -271,6 +271,7 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
 <script>
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbztxEcKnmwf2l0D0K-yarmh5wJ-w6UE8Ec0gPwo0n2XWmaIe9c3r_6BG8Mdmg_XAKVfog/exec';
 const CACHE_KEY='autods_dashboard_cache';
+const CACHE_VERSION='v2'; // bump to invalidate old caches
 const CACHE_TTL=24*60*60*1000; // 24 hours in ms
 
 let _cAll=[],_iAll=[],_c=[],_i=[],_ch={},_sc=2,_sa=false,_fInit=false;
@@ -327,22 +328,32 @@ async function fetchFresh(silent=false) {
 
 // ── CACHE ────────────────────────────────────────────────────────────────
 function saveCache(data) {
-  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch(e) {}
-  // Also save to localStorage as longer-term cache
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch(e) {}
+  // Don't cache empty responses — they'd just trick future loads into showing nothing.
+  if (!data || !Array.isArray(data.campaigns) || data.campaigns.length === 0) return;
+  const payload = JSON.stringify({...data, version: CACHE_VERSION});
+  try { sessionStorage.setItem(CACHE_KEY, payload); } catch(e) {}
+  try { localStorage.setItem(CACHE_KEY, payload); } catch(e) {}
 }
 
 function loadCache() {
-  // Try sessionStorage first (same tab), then localStorage
-  try {
-    const s = sessionStorage.getItem(CACHE_KEY);
-    if (s) return JSON.parse(s);
-  } catch(e) {}
-  try {
-    const l = localStorage.getItem(CACHE_KEY);
-    if (l) return JSON.parse(l);
-  } catch(e) {}
-  return null;
+  const parse = raw => {
+    if (!raw) return null;
+    try {
+      const d = JSON.parse(raw);
+      if (d.version !== CACHE_VERSION) return null;            // old format — ignore
+      if (!Array.isArray(d.campaigns) || !d.campaigns.length) return null; // empty — ignore
+      return d;
+    } catch(e) { return null; }
+  };
+  let c = null;
+  try { c = parse(sessionStorage.getItem(CACHE_KEY)); } catch(e) {}
+  if (!c) { try { c = parse(localStorage.getItem(CACHE_KEY)); } catch(e) {} }
+  if (!c) {
+    // Bad/empty cache present — clear it so we fetch fresh next time too.
+    try { sessionStorage.removeItem(CACHE_KEY); } catch(e) {}
+    try { localStorage.removeItem(CACHE_KEY); } catch(e) {}
+  }
+  return c;
 }
 
 function updateStatusDot(state, ts) {
