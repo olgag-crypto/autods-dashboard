@@ -283,7 +283,18 @@ function showData(){
   
 }
 
-function render(){meta();kpis();brandDonut();productDonut();topBar();lineSpend();lineUsers();lineTrials();renderCampaigns();}
+function safeRun(name,fn){try{fn();}catch(e){showErr('Error in '+name+': '+e.message+' | stack: '+e.stack.split('\n')[1]);throw e;}}
+function render(){
+  safeRun('meta',meta);
+  safeRun('kpis',kpis);
+  safeRun('brandDonut',brandDonut);
+  safeRun('productDonut',productDonut);
+  safeRun('topBar',topBar);
+  safeRun('lineSpend',lineSpend);
+  safeRun('lineUsers',lineUsers);
+  safeRun('lineTrials',lineTrials);
+  safeRun('renderCampaigns',renderCampaigns);
+}
 
 function todayStr(){return new Date().toISOString().slice(0,10);}
 function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
@@ -415,7 +426,7 @@ function topBar(){
 }
 
 function avgAnnotation(vals,color){
-  const avg=vals.reduce((a,b)=>a+b,0)/(vals.length||1);
+  const avg=(vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0)||0;
   return{
     type:'line',
     yMin:avg,yMax:avg,
@@ -424,7 +435,7 @@ function avgAnnotation(vals,color){
     borderDash:[6,4],
     label:{
       display:true,
-      content:'Avg: '+(Number.isInteger(avg)?avg.toLocaleString():'$'+avg.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})),
+      content:'Avg: $'+Math.round(avg).toLocaleString('en-US'),
       position:'end',
       color:color,
       font:{size:10},
@@ -477,7 +488,7 @@ function getDailyAgg(key){
 function lineSpend(){
   const{dates,vals}=getDailyAgg('cost');
   const ann={avg:avgAnnotation(vals,'#3b82f6')};
-  ann.avg.label.content='Avg: $'+Math.round(vals.reduce((a,b)=>a+b,0)/(vals.length||1)).toLocaleString();
+  ann.avg.label.content='Avg: $'+(Math.round(vals.reduce((a,b)=>a+b,0)/(vals.length||1))||0).toLocaleString('en-US');
   lineChart('cSpend','sk-ls',dates,[{
     label:'Spend (USD)',data:vals,
     borderColor:'#3b82f6',backgroundColor:'#3b82f620',
@@ -489,7 +500,7 @@ function lineUsers(){
   const{dates,vals}=getDailyAgg('userCreated');
   const avg=Math.round(vals.reduce((a,b)=>a+b,0)/(vals.length||1));
   const ann={avg:{type:'line',yMin:avg,yMax:avg,borderColor:'#34d39999',borderWidth:1.5,borderDash:[6,4],
-    label:{display:true,content:'Avg: '+avg.toLocaleString(),position:'end',color:'#34d399',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}}};
+    label:{display:true,content:'Avg: '+(avg||0).toLocaleString('en-US'),position:'end',color:'#34d399',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}}};
   lineChart('cUsers','sk-lu',dates,[{
     label:'Users Created',data:vals,
     borderColor:'#34d399',backgroundColor:'#34d39920',
@@ -513,9 +524,9 @@ function lineTrials(){
   const avgFt=Math.round(ftVals.reduce((a,b)=>a+b,0)/(ftVals.length||1));
   const avgPt=Math.round(ptVals.reduce((a,b)=>a+b,0)/(ptVals.length||1));
   const ann={
-    avgAt:{type:'line',yMin:avgAt,yMax:avgAt,borderColor:'#ec489999',borderWidth:1.5,borderDash:[6,4],label:{display:true,content:'AutoDS avg: '+avgAt,position:'start',color:'#ec4899',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}},
-    avgFt:{type:'line',yMin:avgFt,yMax:avgFt,borderColor:'#22d3ee99',borderWidth:1.5,borderDash:[6,4],label:{display:true,content:'Free avg: '+avgFt,position:'center',color:'#22d3ee',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}},
-    avgPt:{type:'line',yMin:avgPt,yMax:avgPt,borderColor:'#a78bfa99',borderWidth:1.5,borderDash:[6,4],label:{display:true,content:'Paid avg: '+avgPt,position:'end',color:'#a78bfa',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}}
+    avgAt:{type:'line',yMin:avgAt,yMax:avgAt,borderColor:'#ec489999',borderWidth:1.5,borderDash:[6,4],label:{display:true,content:'AutoDS avg: '+(avgAt||0).toLocaleString('en-US'),position:'start',color:'#ec4899',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}},
+    avgFt:{type:'line',yMin:avgFt,yMax:avgFt,borderColor:'#22d3ee99',borderWidth:1.5,borderDash:[6,4],label:{display:true,content:'Free avg: '+(avgFt||0).toLocaleString('en-US'),position:'center',color:'#22d3ee',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}},
+    avgPt:{type:'line',yMin:avgPt,yMax:avgPt,borderColor:'#a78bfa99',borderWidth:1.5,borderDash:[6,4],label:{display:true,content:'Paid avg: '+(avgPt||0).toLocaleString('en-US'),position:'end',color:'#a78bfa',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}}
   };
   lineChart('cTrials','sk-lt',dates,[
     {label:'AutoDS Trials',data:atVals,borderColor:'#ec4899',backgroundColor:'#ec489920',fill:false,tension:.3,pointRadius:3,pointHoverRadius:6},
