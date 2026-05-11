@@ -250,10 +250,24 @@ window.addEventListener('DOMContentLoaded',fetchData);
 async function fetchData(){
   hideErr();
   try{
-    const res=await fetch(SCRIPT_URL,{redirect:'follow'});
+    const url=SCRIPT_URL+'?t='+Date.now();
+    const res=await fetch(url,{redirect:'follow'});
     if(!res.ok)throw new Error('HTTP '+res.status);
-    const j=await res.json();
-    _cAll=j.campaigns||[];
+    const text=await res.text();
+    let j;
+    try{j=JSON.parse(text);}catch(pe){throw new Error('Bad JSON: '+text.slice(0,120));}
+    _cAll=(j.campaigns||[]).map(r=>({
+      date:         String(r.date||''),
+      campaign:     String(r.campaign||''),
+      cost:         Number(r.cost)||0,
+      brandType:    String(r.brandType||''),
+      product:      String(r.product||''),
+      userCreated:      Number(r.userCreated)||0,
+      autodsTrials:     Number(r.autodsTrials)||0,
+      shopifyFreeTrial: Number(r.shopifyFreeTrial)||0,
+      shopifyPaidTrial: Number(r.shopifyPaidTrial)||0,
+      bingCost:         Number(r.bingCost)||0,
+    }));
     initFilters();showData();applyFilters();
   }catch(e){showErr('Could not load data: '+e.message);}
 }
