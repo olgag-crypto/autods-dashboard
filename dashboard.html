@@ -256,20 +256,27 @@ async function fetchData(){
     const text=await res.text();
     let j;
     try{j=JSON.parse(text);}catch(pe){throw new Error('Bad JSON: '+text.slice(0,120));}
-    _cAll=(j.campaigns||[]).map(r=>({
-      date:         String(r.date||''),
-      campaign:     String(r.campaign||''),
-      cost:         Number(r.cost)||0,
-      brandType:    String(r.brandType||''),
-      product:      String(r.product||''),
-      userCreated:      Number(r.userCreated)||0,
-      autodsTrials:     Number(r.autodsTrials)||0,
-      shopifyFreeTrial: Number(r.shopifyFreeTrial)||0,
-      shopifyPaidTrial: Number(r.shopifyPaidTrial)||0,
-      bingCost:         Number(r.bingCost)||0,
-    }));
+    _cAll=[];
+    const raw=j.campaigns||[];
+    for(let i=0;i<raw.length;i++){
+      try{
+        const r=raw[i]||{};
+        _cAll.push({
+          date:             typeof r.date==='string'?r.date:'',
+          campaign:         typeof r.campaign==='string'?r.campaign:String(r.campaign||''),
+          cost:             isFinite(r.cost)?+r.cost:0,
+          brandType:        typeof r.brandType==='string'?r.brandType:String(r.brandType||''),
+          product:          typeof r.product==='string'?r.product:String(r.product||''),
+          userCreated:      isFinite(r.userCreated)?+r.userCreated:0,
+          autodsTrials:     isFinite(r.autodsTrials)?+r.autodsTrials:0,
+          shopifyFreeTrial: isFinite(r.shopifyFreeTrial)?+r.shopifyFreeTrial:0,
+          shopifyPaidTrial: isFinite(r.shopifyPaidTrial)?+r.shopifyPaidTrial:0,
+          bingCost:         isFinite(r.bingCost)?+r.bingCost:0,
+        });
+      }catch(rowErr){console.warn('Bad row '+i,rowErr,raw[i]);}
+    }
     initFilters();showData();applyFilters();
-  }catch(e){showErr('Could not load data: '+e.message);}
+  }catch(e){showErr('Could not load data: '+e.message+' | '+e.stack.split('\n').slice(0,3).join(' > '));}
 }
 
 function showData(){
