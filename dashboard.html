@@ -250,7 +250,7 @@ window.addEventListener('DOMContentLoaded',fetchData);
 async function fetchData(){
   hideErr();
   try{
-    const res=await fetch(SCRIPT_URL);
+    const res=await fetch(SCRIPT_URL,{redirect:'follow'});
     if(!res.ok)throw new Error('HTTP '+res.status);
     const j=await res.json();
     _cAll=j.campaigns||[];
