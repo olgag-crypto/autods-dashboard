@@ -275,8 +275,9 @@ async function fetchData(){
         });
       }catch(rowErr){console.warn('Bad row '+i,rowErr,raw[i]);}
     }
-    initFilters();showData();applyFilters();
-  }catch(e){showErr('Could not load data: '+e.message+' | '+e.stack.split('\n').slice(0,3).join(' > '));}
+    initFilters();showData();
+  }catch(e){showErr('Could not load data: '+e.message);return;}
+  applyFilters();
 }
 
 function showData(){
@@ -290,7 +291,7 @@ function showData(){
   
 }
 
-function safeRun(name,fn){try{fn();}catch(e){showErr('Error in '+name+': '+e.message+' | stack: '+e.stack.split('\n')[1]);throw e;}}
+function safeRun(name,fn){try{fn();}catch(e){showErr('Error in '+name+': '+e.message);console.error(name,e);}}
 function render(){
   safeRun('meta',meta);
   safeRun('kpis',kpis);
