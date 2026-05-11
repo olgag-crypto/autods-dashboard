@@ -1,11 +1,522 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta http-equiv="refresh" content="0; url=dashboard.html"/>
-<title>AutoDS · Google Ads Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AutoDS · Google Ads Spend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#080d16;--s1:#0e1520;--s2:#131e2e;--s3:#182436;
+  --border:rgba(255,255,255,.07);--blue:#3b82f6;--cyan:#22d3ee;
+  --violet:#a78bfa;--green:#34d399;--amber:#fbbf24;--red:#f87171;
+  --bing:#00897b;
+  --text:#e2e8f0;--muted:#4e6580;--fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--fb);font-size:14px}
+.blob{position:fixed;border-radius:50%;filter:blur(120px);opacity:.12;pointer-events:none;z-index:0}
+.blob-1{width:600px;height:600px;background:var(--blue);top:-200px;left:-200px}
+.blob-2{width:500px;height:500px;background:var(--violet);bottom:-150px;right:-150px}
+.shell{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:32px 28px 60px}
+header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:36px;flex-wrap:wrap;gap:16px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-mark{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-weight:800;font-size:16px;color:#fff}
+.logo-text h1{font-family:var(--fh);font-size:1.4rem;font-weight:800;letter-spacing:-.3px}
+.logo-text p{font-size:11px;color:var(--muted);margin-top:1px}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.date-badge{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--muted)}
+#statusDot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+#statusDot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.refresh-btn{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;transition:.15s;font-family:var(--fb)}
+.refresh-btn:hover{border-color:var(--blue);color:var(--blue)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:500px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:20px 18px;position:relative;overflow:hidden;animation:fadeUp .5s both;transition:.2s}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--kc,var(--blue)),transparent)}
+.kpi:hover{border-color:var(--kc,var(--blue));transform:translateY(-2px)}
+.kpi .icon{font-size:18px;margin-bottom:10px}
+.kpi .label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.kpi .val{font-family:var(--fh);font-size:1.7rem;font-weight:700;margin:4px 0 2px;line-height:1}
+.kpi .sub{font-size:10px;color:var(--muted)}
+.grid{display:grid;gap:18px;grid-template-columns:1fr 1fr 1fr 1fr;
+  grid-template-areas:"d1 d1 d2 d2" "bar bar bar bar" "camp camp camp camp" "imp imp imp imp"}
+@media(max-width:800px){.grid{grid-template-columns:1fr;grid-template-areas:"d1""d2""bar""camp""imp"}}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:22px 24px;animation:fadeUp .6s both}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.card-header h2{font-family:var(--fh);font-size:.95rem;font-weight:700}
+.chart-wrap{position:relative}
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:24px;position:relative;z-index:1;animation:fadeUp .5s both}
+.filter-group{display:flex;align-items:center;gap:8px}
+.filter-group label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;white-space:nowrap}
+.filter-input{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--fb);cursor:pointer;transition:.15s;color-scheme:dark}
+.filter-input:hover,.filter-input:focus{border-color:var(--blue);outline:none}
+.preset-group{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.preset-btn{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 11px;font-size:11px;cursor:pointer;transition:.15s;font-family:var(--fb)}
+.preset-btn:hover{border-color:var(--blue);color:var(--blue)}
+.preset-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.filter-divider{width:1px;height:22px;background:var(--border);flex-shrink:0}
+.filter-count{font-size:11px;color:var(--muted);padding:0 4px;white-space:nowrap}
+/* table */
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{text-align:left;padding:9px 12px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;transition:.15s}
+thead th:hover{color:var(--blue)}
+thead th.asc::after{content:' ▲';font-size:9px}
+thead th.desc::after{content:' ▼';font-size:9px}
+tbody tr{border-bottom:1px solid var(--border);transition:.1s}
+tbody tr:hover{background:var(--s2)}
+tbody td{padding:10px 12px;white-space:nowrap}
+tfoot td{padding:10px 12px;font-weight:600;font-size:12px;border-top:2px solid var(--border);color:var(--text);white-space:nowrap}
+tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.07em}
+.pill{display:inline-block;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600;letter-spacing:.03em}
+.p-brand{background:#172554;color:#93c5fd}
+.p-nonbrand{background:#0c2233;color:#67e8f9}
+.p-autods{background:#052e16;color:#6ee7b7}
+.p-bys{background:#2e1065;color:#c4b5fd}
+.p-google{background:#1a2e4a;color:#93c5fd}
+.p-bing{background:#0a2e2a;color:#5eead4}
+/* toggle */
+.toggle-wrap{display:flex;align-items:center;gap:8px}
+.toggle-label{font-size:11px;color:var(--muted);white-space:nowrap}
+.toggle{position:relative;width:38px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--s3);border-radius:20px;cursor:pointer;transition:.25s;border:1px solid var(--border)}
+.toggle-slider::before{content:'';position:absolute;width:14px;height:14px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.25s}
+.toggle input:checked+.toggle-slider{background:var(--bing);border-color:var(--bing)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(18px);background:#fff}
+/* search */
+.search-wrap{position:relative}
+.search-wrap::before{content:'🔍';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;pointer-events:none}
+.search-input{background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px 7px 28px;font-size:12px;font-family:var(--fb);transition:.15s;outline:none;width:180px}
+.search-input:focus{border-color:var(--blue)}
+/* source tabs */
+.source-tabs{display:flex;gap:6px}
+.source-tab{background:var(--s2);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;transition:.15s;font-family:var(--fb)}
+.source-tab:hover{border-color:var(--blue);color:var(--text)}
+.source-tab.active-google{background:var(--blue);border-color:var(--blue);color:#fff}
+.source-tab.active-bing{background:var(--bing);border-color:var(--bing);color:#fff}
+/* skeleton */
+.skeleton{border-radius:6px;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{background:var(--s2)}50%{background:var(--s3)}100%{background:var(--s2)}}
+.sk-val{height:32px;width:80px;margin:8px 0 6px;display:inline-block}
+.sk-sub{height:10px;width:60px;display:inline-block}
+.sk-block{width:100%;border-radius:10px;animation:shimmer 1.5s infinite;background:var(--s2)}
+.sk-row{height:36px;width:100%;border-radius:4px;margin-bottom:6px;animation:shimmer 1.5s infinite;background:var(--s2);display:block}
+#errBox{display:none;background:#1a0a0a;border:1px solid #7f1d1d;color:#fca5a5;border-radius:12px;padding:14px 18px;font-size:13px;margin-bottom:20px;position:relative;z-index:1}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+</style>
 </head>
 <body>
-<script>window.location.replace('dashboard.html');</script>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="shell">
+  <header>
+    <div class="logo">
+      <div class="logo-mark">A</div>
+      <div class="logo-text">
+        <h1>Google Ads · Daily Spend</h1>
+        <p>AutoDS Campaign Intelligence Dashboard</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="date-badge" id="dateRange">Loading…</div>
+      <div id="statusDot">Live data</div>
+      <button class="refresh-btn" onclick="fetchData()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <div class="filter-group"><label>From</label><input type="date" class="filter-input" id="fFrom"/></div>
+    <div class="filter-group"><label>To</label><input type="date" class="filter-input" id="fTo"/></div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <label>Brand</label>
+      <select class="filter-input" id="fBrand">
+        <option value="">All</option>
+        <option value="Brand">Brand</option>
+        <option value="Non Brand">Non Brand</option>
+      </select>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <label>Product</label>
+      <select class="filter-input" id="fProduct">
+        <option value="">All</option>
+        <option value="AutoDS">AutoDS</option>
+        <option value="BYS">BYS</option>
+      </select>
+    </div>
+    <div class="filter-count" id="fCount"></div>
+    <div class="preset-group">
+      <button class="preset-btn" data-range="today">Yesterday</button>
+      <button class="preset-btn" data-range="7">Last 7d</button>
+      <button class="preset-btn" data-range="30">Last 30d</button>
+      <button class="preset-btn" data-range="all">All</button>
+      <button class="preset-btn" id="fReset">Reset</button>
+    </div>
+  </div>
+
+  <div id="errBox"></div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi" style="--kc:var(--blue);animation-delay:.05s"><div class="icon">💰</div><div class="label">Total Spend</div><div class="val" id="k1"><span class="skeleton sk-val"></span></div><div class="sub" id="k1s"><span class="skeleton sk-sub"></span></div></div>
+    <div class="kpi" style="--kc:var(--green);animation-delay:.1s"><div class="icon">👤</div><div class="label">Users Created</div><div class="val" id="k2"><span class="skeleton sk-val"></span></div><div class="sub" id="k2s"><span class="skeleton sk-sub"></span></div></div>
+    <div class="kpi" style="--kc:var(--amber);animation-delay:.15s"><div class="icon">🎯</div><div class="label">First Trials</div><div class="val" id="k3"><span class="skeleton sk-val"></span></div><div class="sub" id="k3s"><span class="skeleton sk-sub"></span></div></div>
+    <div class="kpi" style="--kc:var(--cyan);animation-delay:.2s"><div class="icon">🏆</div><div class="label">Paid Trials</div><div class="val" id="k4"><span class="skeleton sk-val"></span></div><div class="sub" id="k4s"><span class="skeleton sk-sub"></span></div></div>
+    <div class="kpi" style="--kc:var(--violet);animation-delay:.25s"><div class="icon">⚡</div><div class="label">Cost / Trial</div><div class="val" id="k5"><span class="skeleton sk-val"></span></div><div class="sub" id="k5s"><span class="skeleton sk-sub"></span></div></div>
+    <div class="kpi" style="--kc:var(--red);animation-delay:.3s"><div class="icon">📢</div><div class="label">Campaigns</div><div class="val" id="k6"><span class="skeleton sk-val"></span></div><div class="sub" id="k6s"><span class="skeleton sk-sub"></span></div></div>
+  </div>
+
+  <!-- CHARTS + TABLES -->
+  <div class="grid">
+    <div class="card" style="grid-area:d1;animation-delay:.2s">
+      <div class="card-header"><h2>Brand Split</h2><span>spend by type</span></div>
+      <div style="height:220px" id="sk-brand"><span class="skeleton sk-block" style="height:220px;display:block"></span></div>
+      <canvas id="cBrand" style="display:none;max-height:220px"></canvas>
+    </div>
+    <div class="card" style="grid-area:d2;animation-delay:.25s">
+      <div class="card-header"><h2>Product Split</h2><span>AutoDS vs BYS</span></div>
+      <div style="height:220px" id="sk-product"><span class="skeleton sk-block" style="height:220px;display:block"></span></div>
+      <canvas id="cProduct" style="display:none;max-height:220px"></canvas>
+    </div>
+    <div class="card" style="grid-area:bar;animation-delay:.3s">
+      <div class="card-header"><h2>Top Campaigns</h2><span>spend vs trials · top 15</span></div>
+      <div id="sk-top"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
+      <canvas id="cTop" style="display:none;max-height:320px"></canvas>
+    </div>
+
+    <!-- CAMPAIGN TABLE -->
+    <div class="card" style="grid-area:camp;animation-delay:.35s">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h2>Campaign Detail</h2>
+          <span id="tblCount" style="color:var(--muted);font-size:11px"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="search-wrap"><input class="search-input" id="tblSearch" type="text" placeholder="Search campaign…" oninput="renderCampaigns()"/></div>
+          <div class="toggle-wrap">
+            <span class="toggle-label">Group by campaign</span>
+            <label class="toggle"><input type="checkbox" id="pivotToggle" onchange="renderCampaigns()"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+      <div id="sk-table"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
+      <div class="tbl-scroll" id="tbl-real" style="display:none">
+        <table><thead id="thead"></thead><tbody id="tbody"></tbody><tfoot id="tfoot"></tfoot></table>
+      </div>
+    </div>
+
+    <!-- IMPACT TABLE -->
+    <div class="card" style="grid-area:imp;animation-delay:.4s">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h2>Impact Data</h2>
+          <span id="impCount" style="color:var(--muted);font-size:11px"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <!-- Google/Bing toggle -->
+          <div class="source-tabs">
+            <button class="source-tab active-google" id="tabGoogle" onclick="switchImpact('Google')">🔵 Google</button>
+            <button class="source-tab" id="tabBing" onclick="switchImpact('Bing')">🟢 Bing</button>
+          </div>
+        </div>
+      </div>
+      <div id="sk-impact"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
+      <div class="tbl-scroll" id="imp-real" style="display:none">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="srtImp(0)">Campaign</th>
+              <th onclick="srtImp(2)">Free Trials</th>
+              <th onclick="srtImp(3)">Paid Trials</th>
+              <th onclick="srtImp(4)" id="impCostHeader">Cost $</th>
+            </tr>
+          </thead>
+          <tbody id="impBody"></tbody>
+          <tfoot id="impFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzgLHCyAs9Wx6RqPTLk8uTKQHX8Q_exz76bTua4pZrfnI5zeMeY9GDxzm0mYcNCLulWiQ/exec';
+let _cAll=[],_iAll=[],_c=[],_i=[],_ch={},_sc=2,_sa=false,_fInit=false;
+let _isc=0,_isa=false,_impSource='Google';
+
+window.addEventListener('DOMContentLoaded',fetchData);
+
+async function fetchData(){
+  hideErr();
+  try{
+    const res=await fetch(SCRIPT_URL);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const j=await res.json();
+    _cAll=j.campaigns||[];_iAll=j.impact||[];
+    initFilters();applyFilters();showData();
+  }catch(e){showErr('Could not load data: '+e.message);}
+}
+
+function showData(){
+  ['sk-brand','sk-product','sk-top','sk-table','sk-impact'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  ['cBrand','cProduct','cTop'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='block';
+  });
+  document.getElementById('tbl-real').style.display='block';
+  document.getElementById('imp-real').style.display='block';
+}
+
+function render(){meta();kpis();brandDonut();productDonut();topBar();renderCampaigns();renderImpact();}
+
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
+function dataDates(){
+  const today=todayStr();
+  return[...new Set(_cAll.map(r=>r.date).filter(d=>d&&d!==today))].sort();
+}
+
+function initFilters(){
+  if(_fInit)return;_fInit=true;
+  const dates=dataDates(),fFrom=document.getElementById('fFrom'),fTo=document.getElementById('fTo');
+  const yest=yesterdayStr();
+  if(dates.length){
+    fFrom.min=dates[0];fTo.max=dates[dates.length-1];fFrom.max=fTo.max;fTo.min=fFrom.min;
+    const defaultDate=dates.includes(yest)?yest:dates[dates.length-1];
+    fFrom.value=defaultDate;fTo.value=defaultDate;
+  }
+  ['fFrom','fTo','fBrand','fProduct'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{clearPreset();applyFilters();}));
+  document.querySelectorAll('.preset-btn[data-range]').forEach(btn=>btn.addEventListener('click',()=>setPreset(btn)));
+  document.getElementById('fReset').addEventListener('click',()=>{
+    const d=dataDates();if(d.length){fFrom.value=d[0];fTo.value=d[d.length-1];}
+    document.getElementById('fBrand').value='';document.getElementById('fProduct').value='';
+    document.getElementById('tblSearch').value='';clearPreset();applyFilters();
+  });
+}
+
+function clearPreset(){document.querySelectorAll('.preset-btn[data-range]').forEach(b=>b.classList.remove('active'));}
+function setPreset(btn){
+  clearPreset();btn.classList.add('active');
+  const range=btn.dataset.range,dates=dataDates();if(!dates.length)return;
+  const yest=yesterdayStr();
+  const last=dates.includes(yest)?yest:dates[dates.length-1];
+  let from=last;
+  if(range==='7'||range==='30'){const d=new Date(last);d.setDate(d.getDate()-(parseInt(range)-1));const iso=d.toISOString().slice(0,10);from=iso<dates[0]?dates[0]:iso;}
+  else if(range==='all')from=dates[0];
+  document.getElementById('fFrom').value=from;document.getElementById('fTo').value=last;applyFilters();
+}
+
+function applyFilters(){
+  const from=document.getElementById('fFrom').value,to=document.getElementById('fTo').value;
+  const brand=document.getElementById('fBrand').value,product=document.getElementById('fProduct').value;
+  const inDate=d=>(!from||d>=from)&&(!to||d<=to);
+  _c=_cAll.filter(r=>inDate(r.date)&&(!brand||r.brandType===brand)&&(!product||r.product===product));
+  _i=_iAll.filter(r=>!r.date||inDate(r.date));
+  document.getElementById('fCount').textContent=_c.length+' of '+_cAll.length+' campaigns';
+  render();
+}
+
+function meta(){
+  const dates=[...new Set(_c.map(r=>r.date))].sort();
+  document.getElementById('dateRange').textContent=dates.length?(dates.length===1?dates[0]:dates[0]+' → '+dates[dates.length-1]):'–';
+}
+
+function kpis(){
+  const sp=sum(_c,'cost'),us=sum(_c,'userCreated'),tr=sum(_c,'firstTrial');
+  const pt=sum(_i,'paidTrials');
+  set('k1','$'+fmt(sp));set('k2',fmtN(us));set('k3',fmtN(tr));
+  set('k4',fmtN(pt));set('k5','$'+fmt(tr?sp/tr:0));set('k6',_c.length);
+  set('k1s','USD · all campaigns');set('k2s','new sign-ups');set('k3s','conversions');
+  set('k4s','from impact data');set('k5s','efficiency');set('k6s','active today');
+}
+
+const PAL=['#3b82f6','#22d3ee','#a78bfa','#34d399','#fbbf24','#f87171','#ec4899','#f97316','#84cc16','#14b8a6','#8b5cf6','#0ea5e9','#d946ef'];
+
+function donut(id,labels,data,colors){
+  if(_ch[id])_ch[id].destroy();
+  _ch[id]=new Chart(document.getElementById(id),{type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderColor:'#0e1520',borderWidth:3}]},
+    options:{cutout:'68%',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{callbacks:{label:ctx=>' $'+fmt(ctx.parsed)+' ('+pct(ctx.parsed,ctx.dataset.data)+'%)'}}}}});
+}
+function brandDonut(){const g=gsum(_c,'brandType');donut('cBrand',Object.keys(g),Object.values(g),['#3b82f6','#22d3ee','#a78bfa']);}
+function productDonut(){const g=gsum(_c,'product');donut('cProduct',Object.keys(g),Object.values(g),['#34d399','#a78bfa','#fbbf24']);}
+
+function topBar(){
+  const top=[..._c].sort((a,b)=>b.cost-a.cost).slice(0,15);
+  if(_ch.cTop)_ch.cTop.destroy();
+  _ch.cTop=new Chart(document.getElementById('cTop'),{type:'bar',
+    data:{
+      labels:top.map(c=>trim(c.campaign,32)),
+      datasets:[
+        {
+          label:'Spend (USD)',
+          data:top.map(c=>c.cost),
+          backgroundColor:'#3b82f6cc',
+          borderRadius:4,
+          borderSkipped:false,
+          yAxisID:'y'
+        },
+        {
+          label:'First Trials',
+          data:top.map(c=>c.firstTrial),
+          backgroundColor:'#34d399cc',
+          borderRadius:4,
+          borderSkipped:false,
+          yAxisID:'y2'
+        }
+      ]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{color:'#94a3b8',font:{size:11},boxWidth:12,boxHeight:12}},
+        tooltip:{callbacks:{
+          label:ctx=>ctx.datasetIndex===0?' $'+fmt(ctx.parsed.x):' '+ctx.parsed.x+' trials'
+        }}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4e6580',font:{size:10}}},
+        y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#94a3b8',font:{size:10}}},
+        y2:{display:false}
+      }
+    }
+  });
+}
+
+// ── CAMPAIGN TABLE ────────────────────────────────────────────────────────
+function renderCampaigns(){
+  const pivot=document.getElementById('pivotToggle').checked;
+  const search=(document.getElementById('tblSearch').value||'').toLowerCase();
+  if(pivot){
+    document.getElementById('thead').innerHTML=`<tr>
+      <th onclick="srt(0)">Campaign</th><th onclick="srt(1)">Type</th><th onclick="srt(2)">Product</th>
+      <th onclick="srt(3)">Days</th><th onclick="srt(4)">Total Cost $</th>
+      <th onclick="srt(5)">Users</th><th onclick="srt(6)">Trials</th></tr>`;
+    const groups={};
+    _c.forEach(r=>{
+      const k=r.campaign;
+      if(!groups[k])groups[k]={campaign:k,brandType:r.brandType,product:r.product,days:new Set(),cost:0,userCreated:0,firstTrial:0};
+      groups[k].days.add(r.date);groups[k].cost+=r.cost;groups[k].userCreated+=r.userCreated;groups[k].firstTrial+=r.firstTrial;
+    });
+    let rows=Object.values(groups).map(g=>({...g,days:g.days.size}));
+    if(search)rows=rows.filter(r=>r.campaign.toLowerCase().includes(search));
+    const pf=['campaign','brandType','product','days','cost','userCreated','firstTrial'];
+    rows.sort((a,b)=>{let av=a[pf[_sc]],bv=b[pf[_sc]];if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}return _sa?(av>bv?1:-1):(av<bv?1:-1);});
+    const tC=rows.reduce((s,r)=>s+r.cost,0),tU=rows.reduce((s,r)=>s+r.userCreated,0),tT=rows.reduce((s,r)=>s+r.firstTrial,0);
+    document.getElementById('tblCount').textContent=rows.length+' unique campaigns';
+    document.getElementById('tbody').innerHTML=rows.map(r=>`<tr>
+      <td title="${r.campaign}">${trim(r.campaign,44)}</td>
+      <td><span class="pill ${r.brandType==='Brand'?'p-brand':'p-nonbrand'}">${r.brandType||'–'}</span></td>
+      <td><span class="pill ${r.product==='BYS'?'p-bys':'p-autods'}">${r.product||'–'}</span></td>
+      <td style="color:var(--muted)">${r.days}</td>
+      <td><strong>$${fmt(r.cost)}</strong></td>
+      <td>${r.userCreated.toLocaleString()}</td><td>${r.firstTrial.toLocaleString()}</td>
+    </tr>`).join('');
+    document.getElementById('tfoot').innerHTML=`<tr>
+      <td class="total-label">Totals</td><td></td><td></td><td></td>
+      <td><strong>$${fmt(tC)}</strong></td><td><strong>${fmtN(tU)}</strong></td><td><strong>${fmtN(tT)}</strong></td></tr>`;
+  }else{
+    document.getElementById('thead').innerHTML=`<tr>
+      <th onclick="srt(0)">Campaign</th><th onclick="srt(1)">Cost $</th>
+      <th onclick="srt(2)">Type</th><th onclick="srt(3)">Product</th>
+      <th onclick="srt(4)">Users</th><th onclick="srt(5)">Trials</th></tr>`;
+    const fields=['campaign','cost','brandType','product','userCreated','firstTrial'];
+    let rows=[..._c];
+    if(search)rows=rows.filter(r=>r.campaign.toLowerCase().includes(search));
+    rows.sort((a,b)=>{let av=a[fields[_sc]],bv=b[fields[_sc]];if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}return _sa?(av>bv?1:-1):(av<bv?1:-1);});
+    const tC=rows.reduce((s,r)=>s+r.cost,0),tU=rows.reduce((s,r)=>s+r.userCreated,0),tT=rows.reduce((s,r)=>s+r.firstTrial,0);
+    document.getElementById('tblCount').textContent=rows.length+' rows';
+    document.getElementById('tbody').innerHTML=rows.map(r=>`<tr>
+      <td title="${r.campaign}">${trim(r.campaign,48)}</td>
+      <td>$${fmt(r.cost)}</td>
+      <td><span class="pill ${r.brandType==='Brand'?'p-brand':'p-nonbrand'}">${r.brandType}</span></td>
+      <td><span class="pill ${r.product==='BYS'?'p-bys':'p-autods'}">${r.product}</span></td>
+      <td>${r.userCreated.toLocaleString()}</td><td>${r.firstTrial.toLocaleString()}</td>
+    </tr>`).join('');
+    document.getElementById('tfoot').innerHTML=`<tr>
+      <td class="total-label">Totals</td>
+      <td><strong>$${fmt(tC)}</strong></td><td></td><td></td>
+      <td><strong>${fmtN(tU)}</strong></td><td><strong>${fmtN(tT)}</strong></td></tr>`;
+  }
+  document.querySelectorAll('thead th').forEach((th,i)=>{th.classList.remove('asc','desc');if(i===_sc)th.classList.add(_sa?'asc':'desc');});
+}
+
+function srt(col){_sc===col?(_sa=!_sa):(_sc=col,_sa=col!==2);renderCampaigns();}
+
+// ── IMPACT TABLE ──────────────────────────────────────────────────────────
+function switchImpact(source){
+  _impSource=source;
+  document.getElementById('tabGoogle').className='source-tab'+(source==='Google'?' active-google':'');
+  document.getElementById('tabBing').className='source-tab'+(source==='Bing'?' active-bing':'');
+  document.getElementById('impCostHeader').textContent=source+' Cost $';
+  document.getElementById('impCampHeader').textContent=source+' Campaign';
+  renderImpact();
+}
+
+function renderImpact(){
+  // Filter by source and date
+  const from=document.getElementById('fFrom').value,to=document.getElementById('fTo').value;
+  const inDate=d=>(!from||d>=from)&&(!to||d<=to);
+
+  let rows=_iAll.filter(r=>{
+    if(r.date&&!inDate(r.date))return false;
+    if(_impSource==='Google')return !r.source||r.source==='Google';
+    if(_impSource==='Bing')return r.source==='Bing';
+    return true;
+  });
+
+  const fields=['date','impactVariant','freeTrials','paidTrials','googleCost','googleCampaign'];
+  rows.sort((a,b)=>{
+    let av=a[fields[_isc]],bv=b[fields[_isc]];
+    if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}
+    return _isa?(av>bv?1:-1):(av<bv?1:-1);
+  });
+
+  const tFT=rows.reduce((s,r)=>s+r.freeTrials,0);
+  const tPT=rows.reduce((s,r)=>s+r.paidTrials,0);
+  const tCost=rows.reduce((s,r)=>s+(_impSource==='Google'?r.googleCost:r.bingCost),0);
+
+  document.getElementById('impCount').textContent=rows.length+' rows';
+
+  document.getElementById('impBody').innerHTML=rows.map(r=>`<tr>
+    <td title="${_impSource==='Google'?(r.googleCampaign||''):(r.bingCampaign||'')}">${trim(_impSource==='Google'?(r.googleCampaign||'–'):(r.bingCampaign||'–'),44)}</td>
+    <td>${r.freeTrials.toLocaleString()}</td>
+    <td>${r.paidTrials.toLocaleString()}</td>
+    <td>$${fmt(_impSource==='Google'?r.googleCost:r.bingCost)}</td>
+  </tr>`).join('');
+
+  document.getElementById('impFoot').innerHTML=`<tr>
+    <td class="total-label">Totals</td>
+    <td><strong>${fmtN(tFT)}</strong></td>
+    <td><strong>${fmtN(tPT)}</strong></td>
+    <td><strong>$${fmt(tCost)}</strong></td>
+  </tr>`;
+}
+
+function srtImp(col){_isc===col?(_isa=!_isa):(_isc=col,_isa=false);renderImpact();}
+
+const sum=(arr,k)=>arr.reduce((s,r)=>s+(r[k]||0),0);
+const fmt=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN=n=>n.toLocaleString('en-US');
+const pct=(v,arr)=>{const s=arr.reduce((a,b)=>a+b,0);return s?(v/s*100).toFixed(1):0;};
+const trim=(s,n)=>s&&s.length>n?s.slice(0,n)+'…':s;
+const set=(id,v)=>document.getElementById(id).textContent=v;
+const gsum=(arr,k)=>arr.reduce((acc,r)=>{const key=r[k]||'Unknown';acc[key]=(acc[key]||0)+r.cost;return acc;},{});
+function showErr(msg){const e=document.getElementById('errBox');e.textContent='⚠ '+msg;e.style.display='block';}
+function hideErr(){document.getElementById('errBox').style.display='none';}
+</script>
 </body>
 </html>
