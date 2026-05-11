@@ -7,6 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script>
+// Only register datalabels for specific charts, not globally
+Chart.unregister(ChartDataLabels);
+</script>
 <style>
 :root {
   --bg:#080d16;--s1:#0e1520;--s2:#131e2e;--s3:#182436;
@@ -44,8 +50,8 @@ header{display:flex;align-items:flex-start;justify-content:space-between;margin-
 .kpi .val{font-family:var(--fh);font-size:1.7rem;font-weight:700;margin:4px 0 2px;line-height:1}
 .kpi .sub{font-size:10px;color:var(--muted)}
 .grid{display:grid;gap:18px;grid-template-columns:1fr 1fr 1fr 1fr;
-  grid-template-areas:"d1 d1 d2 d2" "bar bar bar bar" "camp camp camp camp" "imp imp imp imp"}
-@media(max-width:800px){.grid{grid-template-columns:1fr;grid-template-areas:"d1""d2""bar""camp""imp"}}
+  grid-template-areas:"d1 d1 d2 d2" "bar bar bar bar" "ls ls lu lu" "lt lt lt lt" "camp camp camp camp"}
+@media(max-width:800px){.grid{grid-template-columns:1fr;grid-template-areas:"d1""d2""bar""ls""lu""lt""camp"}}
 .card{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:22px 24px;animation:fadeUp .6s both}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
 .card-header h2{font-family:var(--fh);font-size:.95rem;font-weight:700}
@@ -170,9 +176,9 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
   <div class="kpis">
     <div class="kpi" style="--kc:var(--blue);animation-delay:.05s"><div class="icon">💰</div><div class="label">Total Spend</div><div class="val" id="k1"><span class="skeleton sk-val"></span></div><div class="sub" id="k1s"><span class="skeleton sk-sub"></span></div></div>
     <div class="kpi" style="--kc:var(--green);animation-delay:.1s"><div class="icon">👤</div><div class="label">Users Created</div><div class="val" id="k2"><span class="skeleton sk-val"></span></div><div class="sub" id="k2s"><span class="skeleton sk-sub"></span></div></div>
-    <div class="kpi" style="--kc:var(--amber);animation-delay:.15s"><div class="icon">🎯</div><div class="label">First Trials</div><div class="val" id="k3"><span class="skeleton sk-val"></span></div><div class="sub" id="k3s"><span class="skeleton sk-sub"></span></div></div>
-    <div class="kpi" style="--kc:var(--cyan);animation-delay:.2s"><div class="icon">🏆</div><div class="label">Paid Trials</div><div class="val" id="k4"><span class="skeleton sk-val"></span></div><div class="sub" id="k4s"><span class="skeleton sk-sub"></span></div></div>
-    <div class="kpi" style="--kc:var(--violet);animation-delay:.25s"><div class="icon">⚡</div><div class="label">Cost / Trial</div><div class="val" id="k5"><span class="skeleton sk-val"></span></div><div class="sub" id="k5s"><span class="skeleton sk-sub"></span></div></div>
+    <div class="kpi" style="--kc:var(--amber);animation-delay:.15s"><div class="icon">🎯</div><div class="label">AutoDS Trials</div><div class="val" id="k3"><span class="skeleton sk-val"></span></div><div class="sub" id="k3s"><span class="skeleton sk-sub"></span></div></div>
+    <div class="kpi" style="--kc:var(--cyan);animation-delay:.2s"><div class="icon">🛍️</div><div class="label">Shopify Free Trials</div><div class="val" id="k4"><span class="skeleton sk-val"></span></div><div class="sub" id="k4s"><span class="skeleton sk-sub"></span></div></div>
+    <div class="kpi" style="--kc:var(--violet);animation-delay:.25s"><div class="icon">🏆</div><div class="label">Shopify Paid Trials</div><div class="val" id="k5"><span class="skeleton sk-val"></span></div><div class="sub" id="k5s"><span class="skeleton sk-sub"></span></div></div>
     <div class="kpi" style="--kc:var(--red);animation-delay:.3s"><div class="icon">📢</div><div class="label">Campaigns</div><div class="val" id="k6"><span class="skeleton sk-val"></span></div><div class="sub" id="k6s"><span class="skeleton sk-sub"></span></div></div>
   </div>
 
@@ -189,9 +195,26 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
       <canvas id="cProduct" style="display:none;max-height:220px"></canvas>
     </div>
     <div class="card" style="grid-area:bar;animation-delay:.3s">
-      <div class="card-header"><h2>Top Campaigns</h2><span>by spend (USD) · top 15</span></div>
+      <div class="card-header"><h2>Top Campaigns</h2><span>spend vs trials · top 15</span></div>
       <div id="sk-top"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
       <canvas id="cTop" style="display:none;max-height:320px"></canvas>
+    </div>
+
+    <!-- LINE CHARTS -->
+    <div class="card" style="grid-area:ls;animation-delay:.35s">
+      <div class="card-header"><h2>Spend Over Time</h2><span>daily USD</span></div>
+      <div id="sk-ls"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
+      <canvas id="cSpend" style="display:none;max-height:200px"></canvas>
+    </div>
+    <div class="card" style="grid-area:lu;animation-delay:.38s">
+      <div class="card-header"><h2>Users Created Over Time</h2><span>daily sign-ups</span></div>
+      <div id="sk-lu"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
+      <canvas id="cUsers" style="display:none;max-height:200px"></canvas>
+    </div>
+    <div class="card" style="grid-area:lt;animation-delay:.41s">
+      <div class="card-header"><h2>Trials Over Time</h2><span>AutoDS · Shopify Free · Shopify Paid</span></div>
+      <div id="sk-lt"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
+      <canvas id="cTrials" style="display:none;max-height:200px"></canvas>
     </div>
 
     <!-- CAMPAIGN TABLE -->
@@ -215,46 +238,12 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
       </div>
     </div>
 
-    <!-- IMPACT TABLE -->
-    <div class="card" style="grid-area:imp;animation-delay:.4s">
-      <div class="card-header">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <h2>Impact Data</h2>
-          <span id="impCount" style="color:var(--muted);font-size:11px"></span>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <!-- Google/Bing toggle -->
-          <div class="source-tabs">
-            <button class="source-tab active-google" id="tabGoogle" onclick="switchImpact('Google')">🔵 Google</button>
-            <button class="source-tab" id="tabBing" onclick="switchImpact('Bing')">🟢 Bing</button>
-          </div>
-        </div>
-      </div>
-      <div id="sk-impact"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
-      <div class="tbl-scroll" id="imp-real" style="display:none">
-        <table>
-          <thead>
-            <tr>
-              <th onclick="srtImp(0)">Date</th>
-              <th onclick="srtImp(1)">Impact Variant</th>
-              <th onclick="srtImp(2)">Free Trials</th>
-              <th onclick="srtImp(3)">Paid Trials</th>
-              <th onclick="srtImp(4)" id="impCostHeader">Cost $</th>
-              <th onclick="srtImp(5)" id="impCampHeader">Campaign</th>
-            </tr>
-          </thead>
-          <tbody id="impBody"></tbody>
-          <tfoot id="impFoot"></tfoot>
-        </table>
-      </div>
-    </div>
   </div>
 </div>
 
 <script>
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzgLHCyAs9Wx6RqPTLk8uTKQHX8Q_exz76bTua4pZrfnI5zeMeY9GDxzm0mYcNCLulWiQ/exec';
-let _cAll=[],_iAll=[],_c=[],_i=[],_ch={},_sc=2,_sa=false,_fInit=false;
-let _isc=0,_isa=false,_impSource='Google';
+let _cAll=[],_c=[],_ch={},_sc=2,_sa=false,_fInit=false;
 
 window.addEventListener('DOMContentLoaded',fetchData);
 
@@ -264,32 +253,46 @@ async function fetchData(){
     const res=await fetch(SCRIPT_URL);
     if(!res.ok)throw new Error('HTTP '+res.status);
     const j=await res.json();
-    _cAll=j.campaigns||[];_iAll=j.impact||[];
-    initFilters();applyFilters();showData();
+    _cAll=j.campaigns||[];
+    initFilters();showData();applyFilters();
   }catch(e){showErr('Could not load data: '+e.message);}
 }
 
 function showData(){
-  ['sk-brand','sk-product','sk-top','sk-table','sk-impact'].forEach(id=>{
+  ['sk-brand','sk-product','sk-top','sk-ls','sk-lu','sk-lt','sk-table'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
   ['cBrand','cProduct','cTop'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='block';
   });
   document.getElementById('tbl-real').style.display='block';
-  document.getElementById('imp-real').style.display='block';
+  
 }
 
-function render(){meta();kpis();brandDonut();productDonut();topBar();renderCampaigns();renderImpact();}
-function dataDates(){return[...new Set(_cAll.map(r=>r.date).filter(Boolean))].sort();}
+function render(){meta();kpis();brandDonut();productDonut();topBar();lineSpend();lineUsers();lineTrials();renderCampaigns();}
+
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
+function dataDates(){
+  const today=todayStr();
+  return[...new Set(_cAll.map(r=>r.date).filter(d=>d&&d!==today))].sort();
+}
 
 function initFilters(){
   if(_fInit)return;_fInit=true;
   const dates=dataDates(),fFrom=document.getElementById('fFrom'),fTo=document.getElementById('fTo');
-  if(dates.length){fFrom.min=dates[0];fTo.max=dates[dates.length-1];fFrom.max=fTo.max;fTo.min=fFrom.min;// default to yesterday (last available date)
-const lastDate=dates[dates.length-1];
-fFrom.value=lastDate;fTo.value=lastDate;}
-  ['fFrom','fTo','fBrand','fProduct'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{clearPreset();applyFilters();}));
+  const yest=yesterdayStr();
+  if(dates.length){
+    fFrom.min=dates[0];fTo.max=dates[dates.length-1];fFrom.max=fTo.max;fTo.min=fFrom.min;
+    const defaultDate=dates.includes(yest)?yest:dates[dates.length-1];
+    fFrom.value=defaultDate;fTo.value=defaultDate;
+  }
+  ['fFrom','fTo','fBrand','fProduct'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{
+    clearPreset();
+    const from=document.getElementById('fFrom').value,to=document.getElementById('fTo').value;
+    if(from&&to&&from!==to)document.getElementById('pivotToggle').checked=true;
+    applyFilters();
+  }));
   document.querySelectorAll('.preset-btn[data-range]').forEach(btn=>btn.addEventListener('click',()=>setPreset(btn)));
   document.getElementById('fReset').addEventListener('click',()=>{
     const d=dataDates();if(d.length){fFrom.value=d[0];fTo.value=d[d.length-1];}
@@ -302,9 +305,14 @@ function clearPreset(){document.querySelectorAll('.preset-btn[data-range]').forE
 function setPreset(btn){
   clearPreset();btn.classList.add('active');
   const range=btn.dataset.range,dates=dataDates();if(!dates.length)return;
-  const last=dates[dates.length-1];let from=dates[0];
-  if(range==='yesterday')from=last;
-  else if(range==='7'||range==='30'){const d=new Date(last);d.setDate(d.getDate()-(parseInt(range)-1));const iso=d.toISOString().slice(0,10);from=iso<dates[0]?dates[0]:iso;}
+  const yest=yesterdayStr();
+  const last=dates.includes(yest)?yest:dates[dates.length-1];
+  let from=last;
+  if(range==='7'||range==='30'){const d=new Date(last);d.setDate(d.getDate()-(parseInt(range)-1));const iso=d.toISOString().slice(0,10);from=iso<dates[0]?dates[0]:iso;}
+  else if(range==='all')from=dates[0];
+  // auto-group when range > 1 day
+  const pivot=document.getElementById('pivotToggle');
+  pivot.checked=(from!==last);
   document.getElementById('fFrom').value=from;document.getElementById('fTo').value=last;applyFilters();
 }
 
@@ -313,7 +321,6 @@ function applyFilters(){
   const brand=document.getElementById('fBrand').value,product=document.getElementById('fProduct').value;
   const inDate=d=>(!from||d>=from)&&(!to||d<=to);
   _c=_cAll.filter(r=>inDate(r.date)&&(!brand||r.brandType===brand)&&(!product||r.product===product));
-  _i=_iAll.filter(r=>!r.date||inDate(r.date));
   document.getElementById('fCount').textContent=_c.length+' of '+_cAll.length+' campaigns';
   render();
 }
@@ -324,23 +331,27 @@ function meta(){
 }
 
 function kpis(){
-  const sp=sum(_c,'cost'),us=sum(_c,'userCreated'),tr=sum(_c,'firstTrial');
-  const pt=sum(_i,'paidTrials');
-  set('k1','$'+fmt(sp));set('k2',fmtN(us));set('k3',fmtN(tr));
-  set('k4',fmtN(pt));set('k5','$'+fmt(tr?sp/tr:0));set('k6',_c.length);
-  set('k1s','USD · all campaigns');set('k2s','new sign-ups');set('k3s','conversions');
-  set('k4s','from impact data');set('k5s','efficiency');set('k6s','active today');
+  const sp=sum(_c,'cost'),us=sum(_c,'userCreated');
+  const at=sum(_c,'autodsTrials'),ft=sum(_c,'shopifyFreeTrial'),pt=sum(_c,'shopifyPaidTrial');
+  set('k1','$'+fmt(sp));set('k2',fmtN(us));set('k3',fmtN(at));
+  set('k4',fmtN(ft));set('k5',fmtN(pt));set('k6',_c.length);
+  set('k1s','USD · all campaigns');set('k2s','new sign-ups');set('k3s','AutoDS conversions');
+  set('k4s','Shopify free');set('k5s','Shopify paid');set('k6s','active campaigns');
 }
 
 const PAL=['#3b82f6','#22d3ee','#a78bfa','#34d399','#fbbf24','#f87171','#ec4899','#f97316','#84cc16','#14b8a6','#8b5cf6','#0ea5e9','#d946ef'];
 
 function donut(id,labels,data,colors){
   if(_ch[id])_ch[id].destroy();
-  _ch[id]=new Chart(document.getElementById(id),{type:'doughnut',
+  const canvas=document.getElementById(id);
+  if(!labels.length){canvas.style.display='none';return;}
+  canvas.style.display='block';
+  _ch[id]=new Chart(canvas,{type:'doughnut',
     data:{labels,datasets:[{data,backgroundColor:colors,borderColor:'#0e1520',borderWidth:3}]},
     options:{cutout:'68%',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},padding:10,boxWidth:10,boxHeight:10}},
         tooltip:{callbacks:{label:ctx=>' $'+fmt(ctx.parsed)+' ('+pct(ctx.parsed,ctx.dataset.data)+'%)'}}}}});
+  setTimeout(()=>{if(_ch[id])_ch[id].resize();},50);
 }
 function brandDonut(){const g=gsum(_c,'brandType');donut('cBrand',Object.keys(g),Object.values(g),['#3b82f6','#22d3ee','#a78bfa']);}
 function productDonut(){const g=gsum(_c,'product');donut('cProduct',Object.keys(g),Object.values(g),['#34d399','#a78bfa','#fbbf24']);}
@@ -348,11 +359,155 @@ function productDonut(){const g=gsum(_c,'product');donut('cProduct',Object.keys(
 function topBar(){
   const top=[..._c].sort((a,b)=>b.cost-a.cost).slice(0,15);
   if(_ch.cTop)_ch.cTop.destroy();
-  _ch.cTop=new Chart(document.getElementById('cTop'),{type:'bar',
-    data:{labels:top.map(c=>trim(c.campaign,32)),datasets:[{label:'Spend (USD)',data:top.map(c=>c.cost),backgroundColor:top.map((_,i)=>PAL[i%PAL.length]+'cc'),borderRadius:5,borderSkipped:false}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+fmt(ctx.parsed.x)}}},
-      scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4e6580',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#94a3b8',font:{size:10}}}}}});
+  const topCanvas=document.getElementById('cTop');
+  if(!top.length){topCanvas.style.display='none';return;}
+  topCanvas.style.display='block';
+  _ch.cTop=new Chart(topCanvas,{type:'bar',
+    data:{
+      labels:top.map(c=>trim(c.campaign,32)),
+      datasets:[
+        {
+          label:'Spend (USD)',
+          data:top.map(c=>c.cost),
+          backgroundColor:'#3b82f6cc',
+          borderRadius:[0,4,4,0],
+          borderSkipped:false,
+          stack:'s'
+        },
+        {
+          label:'AutoDS Trials $',
+          data:top.map(c=>c.autodsTrials),
+          backgroundColor:'#ec4899cc',
+          borderRadius:[0,4,4,0],
+          borderSkipped:false,
+          stack:'s'
+        }
+      ]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{color:'#94a3b8',font:{size:11},boxWidth:12,boxHeight:12}},
+        tooltip:{callbacks:{
+          label:ctx=>ctx.datasetIndex===0?' $'+fmt(ctx.parsed.x):' '+ctx.parsed.x+' trials'
+        }}
+      },
+      scales:{
+        x:{stacked:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4e6580',font:{size:10}}},
+        y:{stacked:true,grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#94a3b8',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function avgAnnotation(vals,color){
+  const avg=vals.reduce((a,b)=>a+b,0)/(vals.length||1);
+  return{
+    type:'line',
+    yMin:avg,yMax:avg,
+    borderColor:color+'99',
+    borderWidth:1.5,
+    borderDash:[6,4],
+    label:{
+      display:true,
+      content:'Avg: '+(Number.isInteger(avg)?avg.toLocaleString():'$'+avg.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})),
+      position:'end',
+      color:color,
+      font:{size:10},
+      backgroundColor:'rgba(8,13,22,0.85)',
+      padding:{x:6,y:3},
+      borderRadius:4
+    }
+  };
+}
+
+function lineChart(id,skId,labels,datasets,annotations){
+  if(_ch[id])_ch[id].destroy();
+  const canvas=document.getElementById(id);
+  const sk=document.getElementById(skId);
+  if(!labels.length){canvas.style.display='none';if(sk)sk.style.display='block';return;}
+  if(sk)sk.style.display='none';
+  canvas.style.display='block';
+  _ch[id]=new Chart(canvas,{type:'line',
+    plugins:[ChartDataLabels],
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:datasets.length>1,labels:{color:'#94a3b8',font:{size:11},boxWidth:12,boxHeight:12}},
+        annotation:{annotations:annotations||{}},
+        datalabels:{
+          display:ctx=>ctx.dataIndex===labels.length-1,
+          color:ctx=>datasets[ctx.datasetIndex]?.borderColor||'#94a3b8',
+          font:{size:10,weight:'600'},
+          anchor:'end',align:'top',
+          formatter:v=>typeof v==='number'&&v>999?'$'+Math.round(v).toLocaleString():v
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#4e6580',font:{size:10},maxTicksLimit:12}},
+        y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4e6580',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function getDailyAgg(key){
+  const map={};
+  _c.forEach(r=>{map[r.date]=(map[r.date]||0)+(r[key]||0);});
+  const dates=Object.keys(map).sort();
+  return{dates,vals:dates.map(d=>map[d])};
+}
+
+function lineSpend(){
+  const{dates,vals}=getDailyAgg('cost');
+  const ann={avg:avgAnnotation(vals,'#3b82f6')};
+  ann.avg.label.content='Avg: $'+Math.round(vals.reduce((a,b)=>a+b,0)/(vals.length||1)).toLocaleString();
+  lineChart('cSpend','sk-ls',dates,[{
+    label:'Spend (USD)',data:vals,
+    borderColor:'#3b82f6',backgroundColor:'#3b82f620',
+    fill:true,tension:.3,pointRadius:3,pointHoverRadius:6
+  }],ann);
+}
+
+function lineUsers(){
+  const{dates,vals}=getDailyAgg('userCreated');
+  const avg=Math.round(vals.reduce((a,b)=>a+b,0)/(vals.length||1));
+  const ann={avg:{type:'line',yMin:avg,yMax:avg,borderColor:'#34d39999',borderWidth:1.5,borderDash:[6,4],
+    label:{display:true,content:'Avg: '+avg.toLocaleString(),position:'end',color:'#34d399',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}}};
+  lineChart('cUsers','sk-lu',dates,[{
+    label:'Users Created',data:vals,
+    borderColor:'#34d399',backgroundColor:'#34d39920',
+    fill:true,tension:.3,pointRadius:3,pointHoverRadius:6
+  }],ann);
+}
+
+function lineTrials(){
+  const map={};
+  _c.forEach(r=>{
+    if(!map[r.date])map[r.date]={at:0,ft:0,pt:0};
+    map[r.date].at+=(r.autodsTrials||0);
+    map[r.date].ft+=(r.shopifyFreeTrial||0);
+    map[r.date].pt+=(r.shopifyPaidTrial||0);
+  });
+  const dates=Object.keys(map).sort();
+  const atVals=dates.map(d=>map[d].at);
+  const ftVals=dates.map(d=>map[d].ft);
+  const ptVals=dates.map(d=>map[d].pt);
+  const avgAt=Math.round(atVals.reduce((a,b)=>a+b,0)/(atVals.length||1));
+  const avgFt=Math.round(ftVals.reduce((a,b)=>a+b,0)/(ftVals.length||1));
+  const avgPt=Math.round(ptVals.reduce((a,b)=>a+b,0)/(ptVals.length||1));
+  const ann={
+    avgAt:{type:'line',yMin:avgAt,yMax:avgAt,borderColor:'#ec489999',borderWidth:1.5,borderDash:[6,4],label:{display:true,content:'AutoDS avg: '+avgAt,position:'start',color:'#ec4899',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}},
+    avgFt:{type:'line',yMin:avgFt,yMax:avgFt,borderColor:'#22d3ee99',borderWidth:1.5,borderDash:[6,4],label:{display:true,content:'Free avg: '+avgFt,position:'center',color:'#22d3ee',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}},
+    avgPt:{type:'line',yMin:avgPt,yMax:avgPt,borderColor:'#a78bfa99',borderWidth:1.5,borderDash:[6,4],label:{display:true,content:'Paid avg: '+avgPt,position:'end',color:'#a78bfa',font:{size:10},backgroundColor:'rgba(8,13,22,0.85)',padding:{x:6,y:3},borderRadius:4}}
+  };
+  lineChart('cTrials','sk-lt',dates,[
+    {label:'AutoDS Trials',data:atVals,borderColor:'#ec4899',backgroundColor:'#ec489920',fill:false,tension:.3,pointRadius:3,pointHoverRadius:6},
+    {label:'Shopify Free',data:ftVals,borderColor:'#22d3ee',backgroundColor:'#22d3ee20',fill:false,tension:.3,pointRadius:3,pointHoverRadius:6},
+    {label:'Shopify Paid',data:ptVals,borderColor:'#a78bfa',backgroundColor:'#a78bfa20',fill:false,tension:.3,pointRadius:3,pointHoverRadius:6}
+  ],ann);
 }
 
 // ── CAMPAIGN TABLE ────────────────────────────────────────────────────────
@@ -363,112 +518,71 @@ function renderCampaigns(){
     document.getElementById('thead').innerHTML=`<tr>
       <th onclick="srt(0)">Campaign</th><th onclick="srt(1)">Type</th><th onclick="srt(2)">Product</th>
       <th onclick="srt(3)">Days</th><th onclick="srt(4)">Total Cost $</th>
-      <th onclick="srt(5)">Users</th><th onclick="srt(6)">Trials</th></tr>`;
+      <th onclick="srt(5)">Users</th><th onclick="srt(6)">AutoDS Trials</th>
+      <th onclick="srt(7)">Shopify Free</th><th onclick="srt(8)">Shopify Paid</th></tr>`;
     const groups={};
     _c.forEach(r=>{
       const k=r.campaign;
-      if(!groups[k])groups[k]={campaign:k,brandType:r.brandType,product:r.product,days:new Set(),cost:0,userCreated:0,firstTrial:0};
-      groups[k].days.add(r.date);groups[k].cost+=r.cost;groups[k].userCreated+=r.userCreated;groups[k].firstTrial+=r.firstTrial;
+      if(!groups[k])groups[k]={campaign:k,brandType:r.brandType,product:r.product,days:new Set(),cost:0,userCreated:0,autodsTrials:0,shopifyFreeTrial:0,shopifyPaidTrial:0};
+      groups[k].days.add(r.date);groups[k].cost+=r.cost;groups[k].userCreated+=r.userCreated;
+      groups[k].autodsTrials+=r.autodsTrials;groups[k].shopifyFreeTrial+=r.shopifyFreeTrial;groups[k].shopifyPaidTrial+=r.shopifyPaidTrial;
     });
     let rows=Object.values(groups).map(g=>({...g,days:g.days.size}));
     if(search)rows=rows.filter(r=>r.campaign.toLowerCase().includes(search));
-    const pf=['campaign','brandType','product','days','cost','userCreated','firstTrial'];
+    const pf=['campaign','brandType','product','days','cost','userCreated','autodsTrials','shopifyFreeTrial','shopifyPaidTrial'];
     rows.sort((a,b)=>{let av=a[pf[_sc]],bv=b[pf[_sc]];if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}return _sa?(av>bv?1:-1):(av<bv?1:-1);});
-    const tC=rows.reduce((s,r)=>s+r.cost,0),tU=rows.reduce((s,r)=>s+r.userCreated,0),tT=rows.reduce((s,r)=>s+r.firstTrial,0);
+    const tC=rows.reduce((s,r)=>s+r.cost,0),tU=rows.reduce((s,r)=>s+r.userCreated,0);
+    const tAT=rows.reduce((s,r)=>s+r.autodsTrials,0),tFT=rows.reduce((s,r)=>s+r.shopifyFreeTrial,0),tPT=rows.reduce((s,r)=>s+r.shopifyPaidTrial,0);
     document.getElementById('tblCount').textContent=rows.length+' unique campaigns';
     document.getElementById('tbody').innerHTML=rows.map(r=>`<tr>
-      <td title="${r.campaign}">${trim(r.campaign,44)}</td>
+      <td title="${r.campaign}">${trim(r.campaign,40)}</td>
       <td><span class="pill ${r.brandType==='Brand'?'p-brand':'p-nonbrand'}">${r.brandType||'–'}</span></td>
       <td><span class="pill ${r.product==='BYS'?'p-bys':'p-autods'}">${r.product||'–'}</span></td>
       <td style="color:var(--muted)">${r.days}</td>
       <td><strong>$${fmt(r.cost)}</strong></td>
-      <td>${r.userCreated.toLocaleString()}</td><td>${r.firstTrial.toLocaleString()}</td>
+      <td>${r.userCreated.toLocaleString()}</td>
+      <td>${r.autodsTrials.toLocaleString()}</td>
+      <td>${r.shopifyFreeTrial.toLocaleString()}</td>
+      <td>${r.shopifyPaidTrial.toLocaleString()}</td>
     </tr>`).join('');
     document.getElementById('tfoot').innerHTML=`<tr>
       <td class="total-label">Totals</td><td></td><td></td><td></td>
-      <td><strong>$${fmt(tC)}</strong></td><td><strong>${fmtN(tU)}</strong></td><td><strong>${fmtN(tT)}</strong></td></tr>`;
+      <td><strong>$${fmt(tC)}</strong></td><td><strong>${fmtN(tU)}</strong></td>
+      <td><strong>${fmtN(tAT)}</strong></td><td><strong>${fmtN(tFT)}</strong></td><td><strong>${fmtN(tPT)}</strong></td></tr>`;
   }else{
     document.getElementById('thead').innerHTML=`<tr>
-      <th onclick="srt(0)">Date</th><th onclick="srt(1)">Campaign</th><th onclick="srt(2)">Cost $</th>
-      <th onclick="srt(3)">Type</th><th onclick="srt(4)">Product</th>
-      <th onclick="srt(5)">Users</th><th onclick="srt(6)">Trials</th></tr>`;
-    const fields=['date','campaign','cost','brandType','product','userCreated','firstTrial'];
+      <th onclick="srt(0)">Campaign</th><th onclick="srt(1)">Cost $</th>
+      <th onclick="srt(2)">Type</th><th onclick="srt(3)">Product</th>
+      <th onclick="srt(4)">Users</th><th onclick="srt(5)">AutoDS Trials</th>
+      <th onclick="srt(6)">Shopify Free</th><th onclick="srt(7)">Shopify Paid</th></tr>`;
+    const fields=['campaign','cost','brandType','product','userCreated','autodsTrials','shopifyFreeTrial','shopifyPaidTrial'];
     let rows=[..._c];
-    if(search)rows=rows.filter(r=>r.campaign.toLowerCase().includes(search)||r.date.includes(search));
+    if(search)rows=rows.filter(r=>r.campaign.toLowerCase().includes(search));
     rows.sort((a,b)=>{let av=a[fields[_sc]],bv=b[fields[_sc]];if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}return _sa?(av>bv?1:-1):(av<bv?1:-1);});
-    const tC=rows.reduce((s,r)=>s+r.cost,0),tU=rows.reduce((s,r)=>s+r.userCreated,0),tT=rows.reduce((s,r)=>s+r.firstTrial,0);
+    const tC=rows.reduce((s,r)=>s+r.cost,0),tU=rows.reduce((s,r)=>s+r.userCreated,0);
+    const tAT=rows.reduce((s,r)=>s+r.autodsTrials,0),tFT=rows.reduce((s,r)=>s+r.shopifyFreeTrial,0),tPT=rows.reduce((s,r)=>s+r.shopifyPaidTrial,0);
     document.getElementById('tblCount').textContent=rows.length+' rows';
     document.getElementById('tbody').innerHTML=rows.map(r=>`<tr>
-      <td>${r.date}</td><td title="${r.campaign}">${trim(r.campaign,42)}</td>
+      <td title="${r.campaign}">${trim(r.campaign,44)}</td>
       <td>$${fmt(r.cost)}</td>
       <td><span class="pill ${r.brandType==='Brand'?'p-brand':'p-nonbrand'}">${r.brandType}</span></td>
       <td><span class="pill ${r.product==='BYS'?'p-bys':'p-autods'}">${r.product}</span></td>
-      <td>${r.userCreated.toLocaleString()}</td><td>${r.firstTrial.toLocaleString()}</td>
+      <td>${r.userCreated.toLocaleString()}</td>
+      <td>${r.autodsTrials.toLocaleString()}</td>
+      <td>${r.shopifyFreeTrial.toLocaleString()}</td>
+      <td>${r.shopifyPaidTrial.toLocaleString()}</td>
     </tr>`).join('');
     document.getElementById('tfoot').innerHTML=`<tr>
-      <td class="total-label">Totals</td><td></td>
+      <td class="total-label">Totals</td>
       <td><strong>$${fmt(tC)}</strong></td><td></td><td></td>
-      <td><strong>${fmtN(tU)}</strong></td><td><strong>${fmtN(tT)}</strong></td></tr>`;
+      <td><strong>${fmtN(tU)}</strong></td><td><strong>${fmtN(tAT)}</strong></td>
+      <td><strong>${fmtN(tFT)}</strong></td><td><strong>${fmtN(tPT)}</strong></td></tr>`;
   }
   document.querySelectorAll('thead th').forEach((th,i)=>{th.classList.remove('asc','desc');if(i===_sc)th.classList.add(_sa?'asc':'desc');});
 }
 
 function srt(col){_sc===col?(_sa=!_sa):(_sc=col,_sa=col!==2);renderCampaigns();}
 
-// ── IMPACT TABLE ──────────────────────────────────────────────────────────
-function switchImpact(source){
-  _impSource=source;
-  document.getElementById('tabGoogle').className='source-tab'+(source==='Google'?' active-google':'');
-  document.getElementById('tabBing').className='source-tab'+(source==='Bing'?' active-bing':'');
-  document.getElementById('impCostHeader').textContent=source+' Cost $';
-  document.getElementById('impCampHeader').textContent=source+' Campaign';
-  renderImpact();
-}
-
-function renderImpact(){
-  // Filter by source and date
-  const from=document.getElementById('fFrom').value,to=document.getElementById('fTo').value;
-  const inDate=d=>(!from||d>=from)&&(!to||d<=to);
-
-  let rows=_iAll.filter(r=>{
-    if(r.date&&!inDate(r.date))return false;
-    if(_impSource==='Google')return !r.source||r.source==='Google';
-    if(_impSource==='Bing')return r.source==='Bing';
-    return true;
-  });
-
-  const fields=['date','impactVariant','freeTrials','paidTrials','googleCost','googleCampaign'];
-  rows.sort((a,b)=>{
-    let av=a[fields[_isc]],bv=b[fields[_isc]];
-    if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}
-    return _isa?(av>bv?1:-1):(av<bv?1:-1);
-  });
-
-  const tFT=rows.reduce((s,r)=>s+r.freeTrials,0);
-  const tPT=rows.reduce((s,r)=>s+r.paidTrials,0);
-  const tCost=rows.reduce((s,r)=>s+(_impSource==='Google'?r.googleCost:r.bingCost),0);
-
-  document.getElementById('impCount').textContent=rows.length+' rows';
-
-  document.getElementById('impBody').innerHTML=rows.map(r=>`<tr>
-    <td>${r.date}</td>
-    <td><span class="pill ${r.source==='Bing'?'p-bing':'p-google'}">${r.impactVariant||'–'}</span></td>
-    <td>${r.freeTrials.toLocaleString()}</td>
-    <td>${r.paidTrials.toLocaleString()}</td>
-    <td>$${fmt(_impSource==='Google'?r.googleCost:r.bingCost)}</td>
-    <td title="${_impSource==='Google'?(r.googleCampaign||''):(r.bingCampaign||'')}">${trim(_impSource==='Google'?(r.googleCampaign||'–'):(r.bingCampaign||'–'),42)}</td>
-  </tr>`).join('');
-
-  document.getElementById('impFoot').innerHTML=`<tr>
-    <td class="total-label">Totals</td><td></td>
-    <td><strong>${fmtN(tFT)}</strong></td>
-    <td><strong>${fmtN(tPT)}</strong></td>
-    <td><strong>$${fmt(tCost)}</strong></td>
-    <td></td>
-  </tr>`;
-}
-
-function srtImp(col){_isc===col?(_isa=!_isa):(_isc=col,_isa=false);renderImpact();}
 
 const sum=(arr,k)=>arr.reduce((s,r)=>s+(r[k]||0),0);
 const fmt=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
