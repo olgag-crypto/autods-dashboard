@@ -52,20 +52,6 @@ header{display:flex;align-items:flex-start;justify-content:space-between;margin-
   grid-template-areas:"d1 d1 d2 d2" "bar bar bar bar" "ls ls lu lu" "lt lt lt lt"}
 @media(max-width:800px){.grid{grid-template-columns:1fr;grid-template-areas:"d1""d2""bar""ls""lu""lt"}}
 
-/* ── POPUP DASHBOARD SECTION ───────────────────────── */
-.section-divider{display:flex;align-items:center;gap:16px;margin:40px 0 24px}
-.section-divider h2{font-family:var(--fh);font-size:1.1rem;font-weight:800;letter-spacing:-.2px;white-space:nowrap}
-.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border)}
-.section-divider::before{display:none}
-.popup-badge{background:linear-gradient(135deg,var(--orange),var(--pink));border-radius:6px;padding:3px 10px;font-size:10px;font-weight:700;color:#fff;letter-spacing:.06em;text-transform:uppercase}
-.popup-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
-@media(max-width:900px){.popup-kpis{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:500px){.popup-kpis{grid-template-columns:repeat(2,1fr)}}
-.popup-filters{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:24px;position:relative;z-index:1}
-.popup-grid{display:grid;gap:18px;grid-template-columns:1fr 1fr 1fr 1fr;
-  grid-template-areas:"pd1 pd1 pd2 pd2" "pl1 pl1 pl1 pl1" "pl2 pl2 pl2 pl2" "ptbl ptbl ptbl ptbl"}
-@media(max-width:800px){.popup-grid{grid-template-columns:1fr;grid-template-areas:"pd1""pd2""pl1""pl2""ptbl"}}
-/* ── end POPUP ──────────────────────────────────────── */
 
 .card{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:22px 24px;animation:fadeUp .6s both}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
@@ -188,8 +174,9 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
     <div class="kpi" style="--kc:var(--amber);animation-delay:.15s"><div class="icon">🎯</div><div class="label">AutoDS Trials</div><div class="val" id="k3"><span class="skeleton sk-val"></span></div><div class="sub" id="k3s"><span class="skeleton sk-sub"></span></div></div>
     <div class="kpi" style="--kc:var(--cyan);animation-delay:.2s"><div class="icon">🛍️</div><div class="label">Shopify Free Trials</div><div class="val" id="k4"><span class="skeleton sk-val"></span></div><div class="sub" id="k4s"><span class="skeleton sk-sub"></span></div></div>
     <div class="kpi" style="--kc:var(--violet);animation-delay:.25s"><div class="icon">🏆</div><div class="label">Shopify Paid Trials</div><div class="val" id="k5"><span class="skeleton sk-val"></span></div><div class="sub" id="k5s"><span class="skeleton sk-sub"></span></div></div>
-    <div class="kpi" style="--kc:var(--red);animation-delay:.3s"><div class="icon">📢</div><div class="label">Campaigns</div><div class="val" id="k6"><span class="skeleton sk-val"></span></div><div class="sub" id="k6s"><span class="skeleton sk-sub"></span></div></div>
+    <div class="kpi" style="--kc:var(--orange);animation-delay:.28s"><div class="icon">🪟</div><div class="label">Popup Free Trials</div><div class="val" id="k7"><span class="skeleton sk-val"></span></div><div class="sub" id="k7s"><span class="skeleton sk-sub"></span></div></div>
   </div>
+
 
   <!-- CHARTS + TABLES -->
   <div class="grid">
@@ -221,114 +208,18 @@ tfoot .total-label{color:var(--muted);font-size:10px;text-transform:uppercase;le
       <canvas id="cUsers" style="display:none;max-height:200px"></canvas>
     </div>
     <div class="card" style="grid-area:lt;animation-delay:.41s">
-      <div class="card-header"><h2>Trials Over Time</h2><span>AutoDS · Shopify Free · Shopify Paid</span></div>
+      <div class="card-header"><h2>Trials Over Time</h2><span>AutoDS · Shopify Free · Paid (Shopify + Popup)</span></div>
       <div id="sk-lt"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
       <canvas id="cTrials" style="display:none;max-height:200px"></canvas>
     </div>
-
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════
-       POPUP DASHBOARD SECTION
-       ═══════════════════════════════════════════════════════ -->
-  <div class="section-divider">
-    <h2>Popup Dashboard</h2>
-    <span class="popup-badge">Shopify BYS</span>
-  </div>
-
-  <!-- POPUP FILTERS -->
-  <div class="popup-filters">
-    <div class="filter-group"><label>From</label><input type="date" class="filter-input" id="pfFrom"/></div>
-    <div class="filter-group"><label>To</label><input type="date" class="filter-input" id="pfTo"/></div>
-    <div class="filter-divider"></div>
-    <div class="filter-group">
-      <label>Source</label>
-      <select class="filter-input" id="pfSource">
-        <option value="">All</option>
-        <option value="AutoDS">AutoDS</option>
-        <option value="BYS">BYS</option>
-      </select>
-    </div>
-    <div class="filter-count" id="pfCount"></div>
-    <div class="preset-group">
-      <button class="preset-btn" data-popup-range="today">Yesterday</button>
-      <button class="preset-btn" data-popup-range="7">Last 7d</button>
-      <button class="preset-btn" data-popup-range="30">Last 30d</button>
-      <button class="preset-btn" data-popup-range="all">All</button>
-      <button class="preset-btn" id="pfReset">Reset</button>
-    </div>
-  </div>
-
-  <!-- POPUP KPIs -->
-  <div class="popup-kpis">
-    <div class="kpi" style="--kc:var(--orange);animation-delay:.05s"><div class="icon">🪟</div><div class="label">Free Trial Events</div><div class="val" id="pk1"><span class="skeleton sk-val"></span></div><div class="sub" id="pk1s"><span class="skeleton sk-sub"></span></div></div>
-    <div class="kpi" style="--kc:var(--pink);animation-delay:.1s"><div class="icon">✨</div><div class="label">Free Unique Events</div><div class="val" id="pk2"><span class="skeleton sk-val"></span></div><div class="sub" id="pk2s"><span class="skeleton sk-sub"></span></div></div>
-    <div class="kpi" style="--kc:var(--violet);animation-delay:.15s"><div class="icon">💳</div><div class="label">Paid Trials</div><div class="val" id="pk3"><span class="skeleton sk-val"></span></div><div class="sub" id="pk3s"><span class="skeleton sk-sub"></span></div></div>
-    <div class="kpi" style="--kc:var(--cyan);animation-delay:.2s"><div class="icon">📅</div><div class="label">Days with Data</div><div class="val" id="pk4"><span class="skeleton sk-val"></span></div><div class="sub" id="pk4s"><span class="skeleton sk-sub"></span></div></div>
-    <div class="kpi" style="--kc:var(--green);animation-delay:.25s"><div class="icon">🔄</div><div class="label">Free→Paid Rate</div><div class="val" id="pk5"><span class="skeleton sk-val"></span></div><div class="sub" id="pk5s"><span class="skeleton sk-sub"></span></div></div>
-  </div>
-
-  <!-- POPUP CHARTS + TABLE -->
-  <div class="popup-grid">
-
-    <!-- Source split donut -->
-    <div class="card" style="grid-area:pd1;animation-delay:.2s">
-      <div class="card-header"><h2>Source Split</h2><span>free trial events</span></div>
-      <div style="height:220px" id="sk-psrc"><span class="skeleton sk-block" style="height:220px;display:block"></span></div>
-      <canvas id="cPopupSrc" style="display:none;max-height:220px"></canvas>
-    </div>
-
-    <!-- Paid trials by source donut -->
-    <div class="card" style="grid-area:pd2;animation-delay:.25s">
-      <div class="card-header"><h2>Paid Trials Split</h2><span>by source</span></div>
-      <div style="height:220px" id="sk-ppaid"><span class="skeleton sk-block" style="height:220px;display:block"></span></div>
-      <canvas id="cPopupPaid" style="display:none;max-height:220px"></canvas>
-    </div>
-
-    <!-- Free trial events over time -->
-    <div class="card" style="grid-area:pl1;animation-delay:.3s">
-      <div class="card-header"><h2>Free Trial Events Over Time</h2><span>daily · AutoDS vs BYS</span></div>
-      <div id="sk-pline1"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
-      <canvas id="cPopupLine1" style="display:none;max-height:200px"></canvas>
-    </div>
-
-    <!-- Paid trials over time -->
-    <div class="card" style="grid-area:pl2;animation-delay:.33s">
-      <div class="card-header"><h2>Paid Trials Over Time</h2><span>daily · AutoDS vs BYS</span></div>
-      <div id="sk-pline2"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
-      <canvas id="cPopupLine2" style="display:none;max-height:200px"></canvas>
-    </div>
-
-    <!-- Popup campaign table -->
-    <div class="card" style="grid-area:ptbl;animation-delay:.36s">
-      <div class="card-header">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <h2>Top Popup Campaigns</h2>
-          <span id="ptblCount" style="color:var(--muted);font-size:11px"></span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;color:var(--muted)">Sort by</span>
-          <select class="filter-input" id="ptblSort" onchange="renderPopupTable()" style="padding:5px 8px;font-size:11px">
-            <option value="freeTrial">Free Trial Events</option>
-            <option value="freeUnique">Free Unique Events</option>
-            <option value="paidTrials">Paid Trials</option>
-          </select>
-        </div>
-      </div>
-      <div id="sk-ptable"><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span><span class="sk-row"></span></div>
-      <div id="ptbl-bars" style="display:none"></div>
     </div>
 
   </div>
-  <!-- end POPUP DASHBOARD -->
 
-</div><!-- /shell -->
 
 <script>
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzgLHCyAs9Wx6RqPTLk8uTKQHX8Q_exz76bTua4pZrfnI5zeMeY9GDxzm0mYcNCLulWiQ/exec';
 let _cAll=[],_c=[],_ch={},_sc=2,_sa=false,_fInit=false;
-// popup state
-let _pAll=[],_p=[],_pfInit=false,_psc=0,_psa=false;
 
 window.addEventListener('DOMContentLoaded',fetchData);
 
@@ -359,33 +250,17 @@ async function fetchData(){
           shopifyFreeTrial: isFinite(r.shopifyFreeTrial)?+r.shopifyFreeTrial:0,
           shopifyPaidTrial: isFinite(r.shopifyPaidTrial)?+r.shopifyPaidTrial:0,
           bingCost:         isFinite(r.bingCost)?+r.bingCost:0,
+          popupFreeTrial:   isFinite(r.popupFreeTrial)?+r.popupFreeTrial:0,
+          popupPaidTrial:   isFinite(r.popupPaidTrial)?+r.popupPaidTrial:0,
         });
       }catch(rowErr){console.warn('Bad row '+i,rowErr,raw[i]);}
     }
 
-    // ── popup ──
-    _pAll=[];
-    const praw=j.popup||[];
-    for(let i=0;i<praw.length;i++){
-      try{
-        const r=praw[i]||{};
-        _pAll.push({
-          date:       typeof r.date==='string'?r.date:'',
-          source:     typeof r.source==='string'?r.source:String(r.source||''),
-          campaign:   typeof r.campaign==='string'?r.campaign:String(r.campaign||''),
-          freeTrial:  isFinite(r.freeTrial)?+r.freeTrial:0,
-          freeUnique: isFinite(r.freeUnique)?+r.freeUnique:0,
-          paidTrials: isFinite(r.paidTrials)?+r.paidTrials:0,
-        });
-      }catch(rowErr){console.warn('Bad popup row '+i,rowErr,praw[i]);}
-    }
 
     initFilters();
-    initPopupFilters();
     showData();
   }catch(e){showErr('Could not load data: '+e.message);return;}
   applyFilters();
-  applyPopupFilters();
 }
 
 function showData(){
@@ -409,14 +284,6 @@ function render(){
   safeRun('lineUsers',lineUsers);
   safeRun('lineTrials',lineTrials);
 }
-function renderPopup(){
-  safeRun('popupKpis',popupKpis);
-  safeRun('popupSrcDonut',popupSrcDonut);
-  safeRun('popupPaidDonut',popupPaidDonut);
-  safeRun('popupLine1',popupLine1);
-  safeRun('popupLine2',popupLine2);
-  safeRun('renderPopupTable',renderPopupTable);
-}
 
 function todayStr(){return new Date().toISOString().slice(0,10);}
 function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
@@ -424,11 +291,6 @@ function dataDates(){
   const today=todayStr();
   return[...new Set(_cAll.map(r=>r.date).filter(d=>d&&d!==today))].sort();
 }
-function popupDates(){
-  const today=todayStr();
-  return[...new Set(_pAll.map(r=>r.date).filter(d=>d&&d!==today))].sort();
-}
-
 // ── MAIN FILTERS ──────────────────────────────────────────────────────────
 function initFilters(){
   if(_fInit)return;_fInit=true;
@@ -471,46 +333,6 @@ function applyFilters(){
   render();
 }
 
-// ── POPUP FILTERS ─────────────────────────────────────────────────────────
-function initPopupFilters(){
-  if(_pfInit)return;_pfInit=true;
-  const dates=popupDates(),pfFrom=document.getElementById('pfFrom'),pfTo=document.getElementById('pfTo');
-  const yest=yesterdayStr();
-  if(dates.length){
-    pfFrom.min=dates[0];pfTo.max=dates[dates.length-1];pfFrom.max=pfTo.max;pfTo.min=pfFrom.min;
-    const defaultDate=dates.includes(yest)?yest:dates[dates.length-1];
-    pfFrom.value=defaultDate;pfTo.value=defaultDate;
-  }
-  ['pfFrom','pfTo','pfSource'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{
-    clearPopupPreset();applyPopupFilters();
-  }));
-  document.querySelectorAll('.preset-btn[data-popup-range]').forEach(btn=>btn.addEventListener('click',()=>setPopupPreset(btn)));
-  document.getElementById('pfReset').addEventListener('click',()=>{
-    const d=popupDates();if(d.length){pfFrom.value=d[0];pfTo.value=d[d.length-1];}
-    document.getElementById('pfSource').value='';
-    clearPopupPreset();applyPopupFilters();
-  });
-}
-function clearPopupPreset(){document.querySelectorAll('.preset-btn[data-popup-range]').forEach(b=>b.classList.remove('active'));}
-function setPopupPreset(btn){
-  clearPopupPreset();btn.classList.add('active');
-  const range=btn.dataset.popupRange,dates=popupDates();if(!dates.length)return;
-  const yest=yesterdayStr();
-  const last=dates.includes(yest)?yest:dates[dates.length-1];
-  let from=last;
-  if(range==='7'||range==='30'){const d=new Date(last);d.setDate(d.getDate()-(parseInt(range)-1));const iso=d.toISOString().slice(0,10);from=iso<dates[0]?dates[0]:iso;}
-  else if(range==='all')from=dates[0];
-  document.getElementById('pfFrom').value=from;document.getElementById('pfTo').value=last;applyPopupFilters();
-}
-function applyPopupFilters(){
-  const from=document.getElementById('pfFrom').value,to=document.getElementById('pfTo').value;
-  const source=document.getElementById('pfSource').value;
-  const inDate=d=>(!from||d>=from)&&(!to||d<=to);
-  _p=_pAll.filter(r=>inDate(r.date)&&(!source||r.source===source));
-  document.getElementById('pfCount').textContent=_p.length+' of '+_pAll.length+' rows';
-  renderPopup();
-}
-
 // ── MAIN RENDER ───────────────────────────────────────────────────────────
 function meta(){
   const dates=[...new Set(_c.map(r=>r.date))].sort();
@@ -518,25 +340,14 @@ function meta(){
 }
 function kpis(){
   const sp=sum(_c,'cost'),us=sum(_c,'userCreated');
-  const at=sum(_c,'autodsTrials'),ft=sum(_c,'shopifyFreeTrial'),pt=sum(_c,'shopifyPaidTrial');
+  const at=sum(_c,'autodsTrials'),ft=sum(_c,'shopifyFreeTrial');
+  const pt=sum(_c,'shopifyPaidTrial')+sum(_c,'popupPaidTrial');
+  const pft=sum(_c,'popupFreeTrial');
   set('k1','$'+fmt(sp));set('k2',fmtN(us));set('k3',fmtN(at));
-  set('k4',fmtN(ft));set('k5',fmtN(pt));set('k6',_c.length);
+  set('k4',fmtN(ft));set('k5',fmtN(pt));set('k7',fmtN(pft));
   set('k1s','USD · all campaigns');set('k2s','new sign-ups');set('k3s','AutoDS conversions');
-  set('k4s','Shopify free');set('k5s','Shopify paid');set('k6s','active campaigns');
+  set('k4s','Shopify free');set('k5s','Shopify paid + popup paid');set('k7s','popup interactions');
 }
-
-// ── POPUP KPIs ────────────────────────────────────────────────────────────
-function popupKpis(){
-  const ft=sum(_p,'freeTrial'),fu=sum(_p,'freeUnique'),pt=sum(_p,'paidTrials');
-  const days=[...new Set(_p.map(r=>r.date))].length;
-  const rate=fu>0?(pt/fu*100).toFixed(1):'0.0';
-  set('pk1',fmtN(ft));set('pk2',fmtN(fu));set('pk3',fmtN(pt));
-  set('pk4',days);set('pk5',rate+'%');
-  set('pk1s','popup interactions');set('pk2s','unique visitors');set('pk3s','converted to paid');
-  set('pk4s','date range');set('pk5s','unique free → paid');
-}
-
-const PAL=['#3b82f6','#22d3ee','#a78bfa','#34d399','#fbbf24','#f87171','#ec4899','#f97316','#84cc16','#14b8a6','#8b5cf6','#0ea5e9','#d946ef'];
 
 function donut(id,labels,data,colors){
   if(_ch[id])_ch[id].destroy();
@@ -567,17 +378,6 @@ function donut(id,labels,data,colors){
 }
 function brandDonut(){const g=gsum(_c,'brandType');donut('cBrand',Object.keys(g),Object.values(g),['#3b82f6','#22d3ee','#a78bfa']);}
 function productDonut(){const g=gsum(_c,'product');donut('cProduct',Object.keys(g),Object.values(g),['#34d399','#a78bfa','#fbbf24']);}
-
-function popupSrcDonut(){
-  const g={};
-  _p.forEach(r=>{g[r.source]=(g[r.source]||0)+r.freeTrial;});
-  donut('cPopupSrc',Object.keys(g),Object.values(g),['#34d399','#a78bfa']);
-}
-function popupPaidDonut(){
-  const g={};
-  _p.forEach(r=>{g[r.source]=(g[r.source]||0)+r.paidTrials;});
-  donut('cPopupPaid',Object.keys(g),Object.values(g),['#fb923c','#f472b6']);
-}
 
 function topBar(){
   const top=[..._c].sort((a,b)=>b.cost-a.cost).slice(0,15);
@@ -668,7 +468,7 @@ function lineTrials(){
   const map={};
   _c.forEach(r=>{
     if(!map[r.date])map[r.date]={at:0,ft:0,pt:0};
-    map[r.date].at+=(r.autodsTrials||0);map[r.date].ft+=(r.shopifyFreeTrial||0);map[r.date].pt+=(r.shopifyPaidTrial||0);
+    map[r.date].at+=(r.autodsTrials||0);map[r.date].ft+=(r.shopifyFreeTrial||0);map[r.date].pt+=((r.shopifyPaidTrial||0)+(r.popupPaidTrial||0));
   });
   const dates=Object.keys(map).sort();
   const atVals=dates.map(d=>map[d].at),ftVals=dates.map(d=>map[d].ft),ptVals=dates.map(d=>map[d].pt);
@@ -687,7 +487,6 @@ function lineTrials(){
   ],ann);
 }
 
-// ── POPUP LINE CHARTS ─────────────────────────────────────────────────────
 function getPopupDailyAgg(key){
   const mapA={},mapB={};
   _p.forEach(r=>{
@@ -696,89 +495,6 @@ function getPopupDailyAgg(key){
   });
   const dates=[...new Set(_p.map(r=>r.date))].sort();
   return{dates,autoDS:dates.map(d=>mapA[d]||0),bys:dates.map(d=>mapB[d]||0)};
-}
-
-function popupLine1(){
-  const{dates,autoDS,bys}=getPopupDailyAgg('freeTrial');
-  const avgA=Math.round(autoDS.reduce((a,b)=>a+b,0)/(autoDS.length||1));
-  const avgB=Math.round(bys.reduce((a,b)=>a+b,0)/(bys.length||1));
-  const ann={
-    avgA:avgAnnotation(autoDS,'#34d399','AutoDS avg'),
-    avgB:avgAnnotation(bys,'#a78bfa','BYS avg')
-  };
-  ann.avgA.label.position='start';
-  lineChart('cPopupLine1','sk-pline1',dates,[
-    {label:'AutoDS',data:autoDS,borderColor:'#34d399',backgroundColor:'#34d39920',fill:false,tension:.3,pointRadius:3,pointHoverRadius:6},
-    {label:'BYS',data:bys,borderColor:'#a78bfa',backgroundColor:'#a78bfa20',fill:false,tension:.3,pointRadius:3,pointHoverRadius:6}
-  ],ann);
-}
-
-function popupLine2(){
-  const{dates,autoDS,bys}=getPopupDailyAgg('paidTrials');
-  const ann={
-    avgA:avgAnnotation(autoDS,'#fb923c','AutoDS avg'),
-    avgB:avgAnnotation(bys,'#f472b6','BYS avg')
-  };
-  ann.avgA.label.position='start';
-  lineChart('cPopupLine2','sk-pline2',dates,[
-    {label:'AutoDS Paid',data:autoDS,borderColor:'#fb923c',backgroundColor:'#fb923c20',fill:false,tension:.3,pointRadius:3,pointHoverRadius:6},
-    {label:'BYS Paid',data:bys,borderColor:'#f472b6',backgroundColor:'#f472b620',fill:false,tension:.3,pointRadius:3,pointHoverRadius:6}
-  ],ann);
-}
-
-
-// ── POPUP TABLE ───────────────────────────────────────────────────────────
-function renderPopupTable(){
-  const sortKey=document.getElementById('ptblSort').value;
-  const wrap=document.getElementById('ptbl-bars');
-  const sk=document.getElementById('sk-ptable');
-
-  const withCampaign=_p.filter(r=>r.campaign&&r.campaign.trim()!=='');
-  if(!withCampaign.length){
-    wrap.style.display='none';
-    if(sk)sk.style.display='block';
-    document.getElementById('ptblCount').textContent='no matching campaigns';
-    return;
-  }
-  if(sk)sk.style.display='none';
-  wrap.style.display='block';
-
-  // group by campaign+source
-  const groups={};
-  withCampaign.forEach(r=>{
-    const k=r.campaign+' '+r.source;
-    if(!groups[k])groups[k]={campaign:r.campaign,source:r.source,freeTrial:0,freeUnique:0,paidTrials:0};
-    groups[k].freeTrial+=r.freeTrial;groups[k].freeUnique+=r.freeUnique;groups[k].paidTrials+=r.paidTrials;
-  });
-  let rows=Object.values(groups);
-  rows.sort((a,b)=>b[sortKey]-a[sortKey]);
-  const top=rows.slice(0,15);
-  const maxVal=top[0]?top[0][sortKey]:1;
-
-  const colMap={freeTrial:'#fb923c',freeUnique:'#22d3ee',paidTrials:'#a78bfa'};
-  const barColor=colMap[sortKey]||'#fb923c';
-  const labelMap={freeTrial:'Free Trial Events',freeUnique:'Free Unique Events',paidTrials:'Paid Trials'};
-
-  document.getElementById('ptblCount').textContent='top '+top.length+' by '+labelMap[sortKey];
-
-  wrap.innerHTML=top.map((r,i)=>{
-    const pct=maxVal>0?Math.round(r[sortKey]/maxVal*100):0;
-    const srcClass=r.source==='BYS'?'p-bys':'p-autods';
-    const name=r.campaign.length>48?r.campaign.slice(0,48)+'…':r.campaign;
-    return `<div style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;gap:8px">
-        <div style="display:flex;align-items:center;gap:8px;min-width:0">
-          <span style="font-family:var(--fh);font-size:11px;color:var(--muted);width:16px;text-align:right;flex-shrink:0">${i+1}</span>
-          <span class="pill ${srcClass}" style="flex-shrink:0">${r.source}</span>
-          <span style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.campaign}">${name}</span>
-        </div>
-        <span style="font-family:var(--fh);font-size:13px;font-weight:700;color:${barColor};flex-shrink:0">${fmtN(r[sortKey])}</span>
-      </div>
-      <div style="height:6px;background:var(--s3);border-radius:4px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s ease"></div>
-      </div>
-    </div>`;
-  }).join('');
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
